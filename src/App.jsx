@@ -1,15 +1,17 @@
-import { useState } from 'react'
-import './App.css'
-import './index.css';
-// App.jsx
-import React from 'react';
+import React, { useState } from "react";
 import {
   DndContext,
+  pointerWithin,
+  closestCenter,
   useDraggable,
   useDroppable,
 } from "@dnd-kit/core";
+import "./App.css";
+import "./index.css";
 
-
+/****************************
+ * DRAGGABLE STUDENT CARD
+ ***************************/
 function DraggableStudent({ id }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
   const style = transform
@@ -21,7 +23,7 @@ function DraggableStudent({ id }) {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className="w-24 h-24 bg-blue-500 text-white flex items-center justify-center rounded shadow"
+      className="w-20 h-20 bg-blue-500 text-white flex items-center justify-center rounded shadow select-none"
       style={style}
     >
       {id}
@@ -29,43 +31,149 @@ function DraggableStudent({ id }) {
   );
 }
 
-function DropZone({ id }) {
+/****************************
+ * DROPPABLE SEAT CELL
+ ***************************/
+function Seat({ id, occupant }) {
   const { setNodeRef, isOver } = useDroppable({ id });
+  const borderColor = isOver ? "border-green-500" : "border-gray-300";
 
   return (
     <div
       ref={setNodeRef}
-      className={`w-24 h-24 border-2 ${
-        isOver ? "border-green-500" : "border-gray-300"
-      } rounded flex items-center justify-center`}
+      className={`w-24 h-24 border-2 rounded flex items-center justify-center ${borderColor}`}
     >
-      Seat
+      {occupant ? <DraggableStudent id={occupant} /> : "Seat"}
     </div>
   );
 }
 
-
-
-
-
-
-export default function App() {
-
-
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-    if (over) {
-      console.log(`Moved ${active.id} to ${over.id}`);
-      // update state here
-    }
-  };
-
+/****************************
+ * UNSEATED STUDENT POOL – NOW INSIDE MAIN GRID
+ ***************************/
+function StudentPool({ students }) {
+  const { setNodeRef, isOver } = useDroppable({ id: "pool" });
 
   return (
-    <div className="flex h-screen p-4 space-x-4 bg-gray-100">
-      
-      {/* Left Panel */}
-      <div className="w-1/3 bg-white p-4 rounded shadow space-y-4">
+    <div
+      ref={setNodeRef}
+      className={`min-h-24 w-full p-2 border-2 rounded bg-gray-50 flex flex-wrap gap-2 ${
+        isOver ? "border-green-500" : "border-gray-300"
+      }`}
+    >
+      {students.length === 0 && (
+        <span className="text-gray-400">Drag students here to unseat</span>
+      )}
+      {students.map((s) => (
+        <DraggableStudent key={s} id={s} />
+      ))}
+    </div>
+  );
+}
+
+/****************************
+ * MAIN APP COMPONENT
+ ***************************/
+export default function App() {
+  /**
+   * INITIAL DATA – start with everyone seated, so the pool shows the helper text.
+   */
+  const initialStudents = [
+    "Alice",
+    "Bob",
+    "Charlie",
+    "Dana",
+    "Eli",
+    "Fiona",
+  ];
+
+  // Build an object like { "table-0-seat-0": "Alice", ... } to seat everyone initially
+  const generateSeatMap = () => {
+    const map = {};
+    let idx = 0;
+    for (let t = 0; t < 6; t++) {
+      for (let s = 0; s < 4; s++) {
+        const student = initialStudents[idx] ?? null;
+        map[`table-${t}-seat-${s}`] = student;
+        idx += 1;
+      }
+    }
+    return map;
+  };
+
+  const [seatMap, setSeatMap] = useState(generateSeatMap);
+  const [unseated, setUnseated] = useState([]); // pool starts empty
+
+  /**
+   * HELPERS
+   */
+  const findSeatOfStudent = (studentId) =>
+    Object.keys(seatMap).find((k) => seatMap[k] === studentId);
+
+  /**
+   * DND HANDLER
+   */
+  const handleDragEnd = ({ active, over }) => {
+    if (!over) return;
+    const studentId = active.id;
+
+    // Work out logical destination: "pool" or a seat id
+    let destId = over.id;
+    // If they dropped onto another student already in the pool, treat the destination as the pool itself
+    if (unseated.includes(destId)) destId = "pool";
+
+    // Dropped back in the pool ---------------------------------
+    if (destId === "pool") {
+      const oldSeat = findSeatOfStudent(studentId);
+      if (oldSeat) setSeatMap((m) => ({ ...m, [oldSeat]: null }));
+      setUnseated((prev) =>
+        prev.includes(studentId) ? prev : [...prev, studentId]
+      );
+      return;
+    }
+
+    // Dropped on a seat ---------------------------------------
+    if (!seatMap.hasOwnProperty(destId)) return; // Not a seat
+
+    // Ignore if seat already has the same student
+    if (seatMap[destId] === studentId) return;
+
+    // Ignore if seat is taken (or implement swapping logic)
+    if (seatMap[destId]) return;
+
+    const oldSeat = findSeatOfStudent(studentId);
+
+    setSeatMap((m) => {
+      const newMap = { ...m };
+      if (oldSeat) newMap[oldSeat] = null;
+      newMap[destId] = studentId;
+      return newMap;
+    });
+    setUnseated((prev) => prev.filter((s) => s !== studentId));
+  };
+
+  /**
+   * RENDER HELPERS
+   */
+  const renderTable = (tableIdx) => (
+    <div
+      key={tableIdx}
+      className="grid grid-cols-2 grid-rows-2 gap-1 border p-4 rounded h-56 w-56 bg-white shadow"
+    >
+      {Array.from({ length: 4 }).map((_, seatIdx) => {
+        const seatId = `table-${tableIdx}-seat-${seatIdx}`;
+        return <Seat key={seatId} id={seatId} occupant={seatMap[seatId]} />;
+      })}
+    </div>
+  );
+
+  /**
+   * UI
+   */
+  return (
+    <div className="flex h-screen p-4 space-x-4 bg-gray-100 overflow-hidden">
+      {/* LEFT PANEL – KEEP ORIGINAL FOR CSV & STUDENT INFO */}
+      <div className="w-1/3 bg-white p-4 rounded shadow space-y-4 overflow-y-auto">
         <div className="flex justify-between items-center">
           <label className="font-bold">Upload CSV</label>
           <span className="text-gray-400 cursor-pointer">?</span>
@@ -76,7 +184,11 @@ export default function App() {
               <select className="w-full border p-2 rounded">
                 <option>First Name Last Name</option>
               </select>
-              <input type="text" className="w-full border p-2 rounded" placeholder="Student Name" />
+              <input
+                type="text"
+                className="w-full border p-2 rounded"
+                placeholder="Student Name"
+              />
               <span className="text-green-500">✓</span>
             </div>
           ))}
@@ -86,54 +198,20 @@ export default function App() {
         </button>
       </div>
 
-      {/* Right Panel */}
-      <div className="flex-1 flex flex-col space-y-4">
-        {/* Top controls */}
-        <div className="flex items-center justify-center">
-          <label className="font-bold">Group Size</label>
-          <input
-            type="number"
-            className="border p-2 rounded w-20"
-            defaultValue={4}
-          />
-        </div>
+      {/* RIGHT PANEL – STUDENT POOL + INTERACTIVE SEATING */}
+      <div className="flex-1 bg-white p-4 rounded shadow flex flex-col space-y-4 overflow-y-auto">
+        <h2 className="font-bold text-lg text-center">Seating Sandbox</h2>
 
-        {/* Seating grid */}
-        {/* <div className="grid grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="grid grid-cols-2 grid-rows-2 gap-1 border p-4 rounded h-56 w-56 bg-white shadow">
-              <div className="border p-1 text-center text-xs">Seat</div>
-              <div className="border p-1 text-center text-xs">Seat</div>
-              <div className="border p-1 text-center text-xs">Seat</div>
-              <div className="border p-1 text-center text-xs">Seat</div>
-              
-            </div>
-          ))}
-        </div> */}
-        <DndContext onDragEnd={handleDragEnd}>
-      <div className="p-8 grid grid-cols-4 gap-4">
-        <DraggableStudent id="Alice" />
-        <DropZone id="seat-1" />
-        <DropZone id="seat-2" />
-        <DropZone id="seat-3" />
-      </div>
-    </DndContext>
+        {/* SINGLE DndContext WRAPS BOTH POOL & GRID */}
+        <DndContext collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
+          {/* Student Pool */}
+          <StudentPool students={unseated} />
 
-        {/* Footer inputs */}
-        <div className="border-t pt-4 mt-auto space-y-2">
-          <label className="">Type your concerns</label>
-          <div className="flex space-x-2">
-            {/* <select className="border p-2 rounded">
-              <option>Split: boys, girls</option>
-            </select> */}
-            <input
-              type="text"
-              placeholder="Other preferences..."
-              className="flex-1 border p-2 rounded"
-            />
-            <button className="bg-gray-300 px-4 rounded">→</button>
+          {/* Seating Tables */}
+          <div className="grid grid-cols-3 gap-4 justify-items-center mt-4">
+            {Array.from({ length: 6 }).map((_, t) => renderTable(t))}
           </div>
-        </div>
+        </DndContext>
       </div>
     </div>
   );
