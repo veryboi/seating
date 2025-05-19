@@ -88,18 +88,34 @@ export default function App() {
   ];
 
   // Build an object like { "table-0-seat-0": "Alice", ... } to seat everyone initially
+  // const generateSeatMap = () => {
+  //   const map = {};
+  //   let idx = 0;
+  //   for (let t = 0; t < 6; t++) {
+  //     for (let s = 0; s < 4; s++) {
+  //       const student = initialStudents[idx] ?? null;
+  //       map[`table-${t}-seat-${s}`] = student;
+  //       idx += 1;
+  //     }
+  //   }
+  //   return map;
+  // };
+
+  // randomize the chart
   const generateSeatMap = () => {
-    const map = {};
-    let idx = 0;
-    for (let t = 0; t < 6; t++) {
-      for (let s = 0; s < 4; s++) {
-        const student = initialStudents[idx] ?? null;
-        map[`table-${t}-seat-${s}`] = student;
-        idx += 1;
-      }
+  const shuffled = [...initialStudents].sort(() => Math.random() - 0.5); // random shuffle
+  const map = {};
+  let idx = 0;
+  for (let t = 0; t < 6; t++) {
+    for (let s = 0; s < 4; s++) {
+      const student = shuffled[idx] ?? null; // fill with student or null if none left
+      map[`table-${t}-seat-${s}`] = student;
+      idx += 1;
     }
-    return map;
-  };
+  }
+  return map;
+};
+
 
   const [seatMap, setSeatMap] = useState(generateSeatMap);
   const [unseated, setUnseated] = useState([]); // pool starts empty
@@ -193,9 +209,16 @@ export default function App() {
             </div>
           ))}
         </div>
-        <button className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-          Generate Seating Chart
-        </button>
+          <button
+            onClick={() => {
+              setSeatMap(generateSeatMap());
+              setUnseated([]);
+            }}
+            className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+          >
+            Generate Seating Chart
+          </button>
+
       </div>
 
       {/* RIGHT PANEL – STUDENT POOL + INTERACTIVE SEATING */}
