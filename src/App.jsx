@@ -9,24 +9,73 @@ import {
 import "./App.css";
 import "./index.css";
 
+// /****************************
+//  * DRAGGABLE STUDENT CARD
+//  ***************************/
+// function DraggableStudent({ id }) {
+//   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
+//   const style = transform
+//     ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
+//     : undefined;
+
+//   return (
+//     <div
+//       ref={setNodeRef}
+//       {...listeners}
+//       {...attributes}
+//       className="w-20 h-20 bg-blue-500 text-white flex items-center justify-center rounded shadow select-none"
+//       style={style}
+//     >
+//       {id}
+//     </div>
+//   );
+// }
+
 /****************************
- * DRAGGABLE STUDENT CARD
+ * DRAGGABLE STUDENT CARD (with tags)
  ***************************/
-function DraggableStudent({ id }) {
+function DraggableStudent({ id, tags = [], onAddTag }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
   const style = transform
     ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
     : undefined;
+
+  // Local state for new tag input
+  const [tagInput, setTagInput] = React.useState("");
 
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className="w-20 h-20 bg-blue-500 text-white flex items-center justify-center rounded shadow select-none"
+      className="w-20 h-20 bg-blue-500 text-white flex flex-col items-center justify-center rounded shadow select-none p-1"
       style={style}
     >
-      {id}
+      <div>{id}</div>
+      <div className="flex flex-wrap gap-1 mt-1">
+        {tags.map((tag, i) => (
+          <span key={i} className="bg-green-300 text-xs px-1 rounded">{tag}</span>
+        ))}
+      </div>
+      {onAddTag && (
+        <form
+          onSubmit={e => {
+            e.preventDefault();
+            if (tagInput.trim()) {
+              onAddTag(id, tagInput.trim());
+              setTagInput("");
+            }
+          }}
+          className="mt-1"
+        >
+          <input
+            className="text-xs text-black rounded px-1 w-14"
+            value={tagInput}
+            onChange={e => setTagInput(e.target.value)}
+            placeholder="+tag"
+          />
+        </form>
+      )}
     </div>
   );
 }
@@ -34,7 +83,7 @@ function DraggableStudent({ id }) {
 /****************************
  * DROPPABLE SEAT CELL
  ***************************/
-function Seat({ id, occupant }) {
+function Seat({ id, occupant, tags, onAddTag }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const borderColor = isOver ? "border-green-500" : "border-gray-300";
 
@@ -43,7 +92,11 @@ function Seat({ id, occupant }) {
       ref={setNodeRef}
       className={`w-24 h-24 border-2 rounded flex items-center justify-center ${borderColor}`}
     >
-      {occupant ? <DraggableStudent id={occupant} /> : "Seat"}
+      {occupant ? (
+        <DraggableStudent id={occupant} tags={tags} onAddTag={onAddTag} />
+      ) : (
+        "Seat"
+      )}
     </div>
   );
 }
@@ -51,7 +104,7 @@ function Seat({ id, occupant }) {
 /****************************
  * UNSEATED STUDENT POOL – NOW INSIDE MAIN GRID
  ***************************/
-function StudentPool({ students }) {
+function StudentPool({ students, studentTags, onAddTag }) {
   const { setNodeRef, isOver } = useDroppable({ id: "pool" });
 
   return (
@@ -65,7 +118,12 @@ function StudentPool({ students }) {
         <span className="text-gray-400">Drag students here to unseat</span>
       )}
       {students.map((s) => (
-        <DraggableStudent key={s} id={s} />
+        <DraggableStudent
+          key={s}
+          id={s}
+          tags={studentTags[s] || []}
+          onAddTag={onAddTag}
+        />
       ))}
     </div>
   );
@@ -119,6 +177,17 @@ export default function App() {
 
   const [seatMap, setSeatMap] = useState(generateSeatMap);
   const [unseated, setUnseated] = useState([]); // pool starts empty
+
+// NEW: tags state for each student
+  const [studentTags, setStudentTags] = useState({});
+
+  // Handler to add a tag to a student
+  const handleAddTag = (studentId, tag) => {
+    setStudentTags(prev => ({
+      ...prev,
+      [studentId]: prev[studentId] ? [...prev[studentId], tag] : [tag],
+    }));
+  };
 
   /**
    * HELPERS
@@ -178,7 +247,16 @@ export default function App() {
     >
       {Array.from({ length: 4 }).map((_, seatIdx) => {
         const seatId = `table-${tableIdx}-seat-${seatIdx}`;
-        return <Seat key={seatId} id={seatId} occupant={seatMap[seatId]} />;
+        const occupant = seatMap[seatId];
+        return (
+          <Seat
+            key={seatId}
+            id={seatId}
+            occupant={occupant}
+            tags={occupant ? studentTags[occupant] || [] : []}
+            onAddTag={handleAddTag}
+          />
+        );
       })}
     </div>
   );
