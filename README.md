@@ -16,8 +16,8 @@ If you are developing a production application, we recommend using TypeScript wi
 This project is a web application designed to help educators easily create and manage student groups and seating for classroom activities. It allows teachers to add student profiles, input custom grouping constraints, and automatically generate balanced groups. We are also exploring integration with large language models (LLMs) to support natural language input for constraints and provide intelligent suggestions for group formation.
 
 ## smartArrange Logos
-![black_logo]([image-url](https://github.com/veryboi/seating/blob/main/black_logo.png))
-![white_logo]([image-url](https://github.com/veryboi/seating/blob/main/white_logo.png))
+![black_logo](https://github.com/veryboi/seating/blob/main/black_logo.png)
+![white_logo](https://github.com/veryboi/seating/blob/main/white_logo.png)
 
 ## Running the Interaction Flow
 
