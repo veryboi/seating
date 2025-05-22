@@ -110,9 +110,8 @@ function StudentPool({ students, studentTags, onAddTag }) {
   return (
     <div
       ref={setNodeRef}
-      className={`min-h-24 w-full p-2 border-2 rounded bg-gray-50 flex flex-wrap gap-2 ${
-        isOver ? "border-green-500" : "border-gray-300"
-      }`}
+      className={`min-h-24 w-full p-2 border-2 rounded bg-gray-50 flex flex-wrap gap-2 ${isOver ? "border-green-500" : "border-gray-300"
+        }`}
     >
       {students.length === 0 && (
         <span className="text-gray-400">Drag students here to unseat</span>
@@ -152,7 +151,70 @@ function generateSeatMapFromList(studentList) {
   return map;
 }
 
-
+/****************************
+ * STUDENT DETAIL MODAL
+ ***************************/
+function StudentDetailModal({ student, tags, onAddTag, onRemoveTag, onClose }) {
+  const [tagInput, setTagInput] = useState("");
+  if (!student) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-lg p-6 min-w-[300px] relative">
+        <button
+          className="absolute top-2 right-2 text-gray-500 hover:text-black text-xl"
+          onClick={onClose}
+        >
+          ×
+        </button>
+        <h2 className="text-lg font-bold mb-2">{student}</h2>
+        <div className="mb-2">
+          <span className="font-semibold">Tags:</span>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {(tags || []).map((tag, i) => (
+              <span
+                key={i}
+                className="bg-green-300 text-xs px-1 rounded flex items-center"
+              >
+                {tag}
+                <button
+                  type="button"
+                  className="ml-1 text-red-600"
+                  onClick={() => onRemoveTag(student, i)}
+                  aria-label="Remove tag"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+        <form
+          onSubmit={e => {
+            e.preventDefault();
+            if (tagInput.trim()) {
+              onAddTag(student, tagInput.trim());
+              setTagInput("");
+            }
+          }}
+          className="mt-2"
+        >
+          <input
+            className="text-xs text-black rounded px-1 w-24 border"
+            value={tagInput}
+            onChange={e => setTagInput(e.target.value)}
+            placeholder="+tag"
+          />
+          <button
+            type="submit"
+            className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs"
+          >
+            Add
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 /****************************
  * MAIN APP COMPONENT
@@ -171,8 +233,8 @@ export default function App() {
   // ];
 
   const [studentInput, setStudentInput] = useState(""); // for the input field
-const [studentList, setStudentList] = useState([]);   // holds the current list of students
-
+  const [studentList, setStudentList] = useState([]);   // holds the current list of students
+  
 
   // Build an object like { "table-0-seat-0": "Alice", ... } to seat everyone initially
   // const generateSeatMap = () => {
@@ -189,33 +251,42 @@ const [studentList, setStudentList] = useState([]);   // holds the current list 
   // };
 
   // randomize the chart
-const generateSeatMap = () => {
-  const shuffled = [...studentList].sort(() => Math.random() - 0.5); // shuffle current studentList
-  const map = {};
-  let idx = 0;
-  for (let t = 0; t < 6; t++) {
-    for (let s = 0; s < 4; s++) {
-      const student = shuffled[idx] ?? null;
-      map[`table-${t}-seat-${s}`] = student;
-      idx++;
+  const generateSeatMap = () => {
+    const shuffled = [...studentList].sort(() => Math.random() - 0.5); // shuffle current studentList
+    const map = {};
+    let idx = 0;
+    for (let t = 0; t < 6; t++) {
+      for (let s = 0; s < 4; s++) {
+        const student = shuffled[idx] ?? null;
+        map[`table-${t}-seat-${s}`] = student;
+        idx++;
+      }
     }
-  }
-  return map;
-};
+    return map;
+  };
 
 
 
   const [seatMap, setSeatMap] = useState(generateSeatMap);
   const [unseated, setUnseated] = useState([]); // pool starts empty
 
-// NEW: tags state for each student
+  // NEW: tags state for each student
   const [studentTags, setStudentTags] = useState({});
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   // Handler to add a tag to a student
   const handleAddTag = (studentId, tag) => {
     setStudentTags(prev => ({
       ...prev,
       [studentId]: prev[studentId] ? [...prev[studentId], tag] : [tag],
+    }));
+  };
+
+  // Handler to remove a tag from a student
+  const handleRemoveTag = (studentId, tagIdx) => {
+    setStudentTags(prev => ({
+      ...prev,
+      [studentId]: prev[studentId].filter((_, i) => i !== tagIdx),
     }));
   };
 
@@ -291,77 +362,180 @@ const generateSeatMap = () => {
     </div>
   );
 
-  /**
+
+  // Student box component for the left panel
+  function StudentBox({ student }) {
+    return (
+      <button
+        className="w-full text-left bg-gray-100 border rounded p-2 mb-1 hover:bg-blue-100 transition flex flex-col"
+        onClick={() => setSelectedStudent(student)}
+      >
+        <span className="font-semibold">{student}</span>
+        <div className="flex flex-wrap gap-1 mt-1">
+          {(studentTags[student] || []).map((tag, i) => (
+            <span key={i} className="bg-green-300 text-xs px-1 rounded">{tag}</span>
+          ))}
+        </div>
+      </button>
+    );
+  }
+
+    /**
    * UI
    */
   return (
     <div className="flex h-screen p-4 space-x-4 bg-gray-100 overflow-hidden">
-      {/* LEFT PANEL – KEEP ORIGINAL FOR CSV & STUDENT INFO */}
+      {/* LEFT PANEL – STUDENT ENTRY & LIST */}
       <div className="w-1/3 bg-white p-4 rounded shadow space-y-4 overflow-y-auto">
         <div className="flex justify-between items-center">
-          <label className="font-bold">Upload CSV</label>
-          <span className="text-gray-400 cursor-pointer">?</span>
+          <label className="font-bold">Students</label>
         </div>
-<div className="space-y-2">
-  <div className="flex items-center space-x-2">
-    <input
-      type="text"
-      className="w-full border p-2 rounded"
-      placeholder="Enter student name"
-      value={studentInput}
-      onChange={(e) => setStudentInput(e.target.value)}
-    />
-    <button
-      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-      onClick={() => {
-        if (studentInput.trim() !== "") {
-          setStudentList((prev) => [...prev, studentInput.trim()]);
-          setStudentInput("");
-        }
-      }}
-    >
-      Add
-    </button>
-  </div>
-
-  {studentList.length > 0 && (
-    <ul className="list-disc list-inside text-gray-700">
-      {studentList.map((s, i) => (
-        <li key={i}>{s}</li>
-      ))}
-    </ul>
-  )}
-</div>
-
-  <button
-    className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-    onClick={() => {
-      const newMap = generateSeatMapFromList(studentList);
-      setSeatMap(newMap);
-      setUnseated([]);
-    }}
-  >
-    Generate Seating Chart
-  </button>
-
-
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <input
+              type="text"
+              className="w-full border p-2 rounded"
+              placeholder="Enter student name"
+              value={studentInput}
+              onChange={(e) => setStudentInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (studentInput.trim() !== "" && !studentList.includes(studentInput.trim())) {
+                    setStudentList((prev) => [...prev, studentInput.trim()]);
+                    setStudentInput("");
+                  }
+                }
+              }}
+            />
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              onClick={() => {
+                if (studentInput.trim() !== "" && !studentList.includes(studentInput.trim())) {
+                  setStudentList((prev) => [...prev, studentInput.trim()]);
+                  setStudentInput("");
+                }
+              }}
+            >
+              Add
+            </button>
+          </div>
+          {studentList.length > 0 && (
+            <div>
+              {studentList.map((s, i) => (
+                <StudentBox key={i} student={s} />
+              ))}
+            </div>
+          )}
+        </div>
+        <button
+          className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+          onClick={() => {
+            const newMap = generateSeatMapFromList(studentList);
+            setSeatMap(newMap);
+            setUnseated([]);
+          }}
+        >
+          Generate Seating Chart
+        </button>
       </div>
 
       {/* RIGHT PANEL – STUDENT POOL + INTERACTIVE SEATING */}
       <div className="flex-1 bg-white p-4 rounded shadow flex flex-col space-y-4 overflow-y-auto">
         <h2 className="font-bold text-lg text-center">Seating Sandbox</h2>
-
-        {/* SINGLE DndContext WRAPS BOTH POOL & GRID */}
         <DndContext collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
-          {/* Student Pool */}
-          <StudentPool students={unseated} />
-
-          {/* Seating Tables */}
+          <StudentPool students={unseated} studentTags={studentTags} onAddTag={handleAddTag} />
           <div className="grid grid-cols-3 gap-4 justify-items-center mt-4">
             {Array.from({ length: 6 }).map((_, t) => renderTable(t))}
           </div>
         </DndContext>
       </div>
+
+      {/* Student Detail Modal */}
+      {selectedStudent && (
+        <StudentDetailModal
+          student={selectedStudent}
+          tags={studentTags[selectedStudent] || []}
+          onAddTag={handleAddTag}
+          onRemoveTag={handleRemoveTag}
+          onClose={() => setSelectedStudent(null)}
+        />
+      )}
     </div>
   );
 }
+
+//   /**
+//    * UI
+//    */
+//   return (
+//     <div className="flex h-screen p-4 space-x-4 bg-gray-100 overflow-hidden">
+//       {/* LEFT PANEL – KEEP ORIGINAL FOR CSV & STUDENT INFO */}
+//       <div className="w-1/3 bg-white p-4 rounded shadow space-y-4 overflow-y-auto">
+//         <div className="flex justify-between items-center">
+//           <label className="font-bold">Upload CSV</label>
+//           <span className="text-gray-400 cursor-pointer">?</span>
+//         </div>
+//         <div className="space-y-2">
+//           <div className="flex items-center space-x-2">
+//             <input
+//               type="text"
+//               className="w-full border p-2 rounded"
+//               placeholder="Enter student name"
+//               value={studentInput}
+//               onChange={(e) => setStudentInput(e.target.value)}
+//             />
+//             <button
+//               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+//               onClick={() => {
+//                 if (studentInput.trim() !== "") {
+//                   setStudentList((prev) => [...prev, studentInput.trim()]);
+//                   setStudentInput("");
+//                 }
+//               }}
+//             >
+//               Add
+//             </button>
+//           </div>
+
+//           {studentList.length > 0 && (
+//             <ul className="list-disc list-inside text-gray-700">
+//               {studentList.map((s, i) => (
+//                 <li key={i}>{s}</li>
+//               ))}
+//             </ul>
+//           )}
+//         </div>
+
+//         <button
+//           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+//           onClick={() => {
+//             const newMap = generateSeatMapFromList(studentList);
+//             setSeatMap(newMap);
+//             setUnseated([]);
+//           }}
+//         >
+//           Generate Seating Chart
+//         </button>
+
+
+//       </div>
+
+//       {/* RIGHT PANEL – STUDENT POOL + INTERACTIVE SEATING */}
+//       <div className="flex-1 bg-white p-4 rounded shadow flex flex-col space-y-4 overflow-y-auto">
+//         <h2 className="font-bold text-lg text-center">Seating Sandbox</h2>
+
+//         {/* SINGLE DndContext WRAPS BOTH POOL & GRID */}
+//         <DndContext collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
+//           {/* Student Pool */}
+//           <StudentPool students={unseated} />
+
+//           {/* Seating Tables */}
+//           <div className="grid grid-cols-3 gap-4 justify-items-center mt-4">
+//             {Array.from({ length: 6 }).map((_, t) => renderTable(t))}
+//           </div>
+//         </DndContext>
+//       </div>
+//     </div>
+//   );
+// }
