@@ -129,6 +129,31 @@ function StudentPool({ students, studentTags, onAddTag }) {
   );
 }
 
+function shuffle(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function generateSeatMapFromList(studentList) {
+  const shuffled = shuffle(studentList);
+  const map = {};
+  let idx = 0;
+  for (let t = 0; t < 6; t++) {
+    for (let s = 0; s < 4; s++) {
+      const student = shuffled[idx] ?? null;
+      map[`table-${t}-seat-${s}`] = student;
+      idx += 1;
+    }
+  }
+  return map;
+}
+
+
+
 /****************************
  * MAIN APP COMPONENT
  ***************************/
@@ -136,14 +161,18 @@ export default function App() {
   /**
    * INITIAL DATA – start with everyone seated, so the pool shows the helper text.
    */
-  const initialStudents = [
-    "Alice",
-    "Bob",
-    "Charlie",
-    "Dana",
-    "Eli",
-    "Fiona",
-  ];
+  // const initialStudents = [
+  //   "Alice",
+  //   "Bob",
+  //   "Charlie",
+  //   "Dana",
+  //   "Eli",
+  //   "Fiona",
+  // ];
+
+  const [studentInput, setStudentInput] = useState(""); // for the input field
+const [studentList, setStudentList] = useState([]);   // holds the current list of students
+
 
   // Build an object like { "table-0-seat-0": "Alice", ... } to seat everyone initially
   // const generateSeatMap = () => {
@@ -160,19 +189,20 @@ export default function App() {
   // };
 
   // randomize the chart
-  const generateSeatMap = () => {
-  const shuffled = [...initialStudents].sort(() => Math.random() - 0.5); // random shuffle
+const generateSeatMap = () => {
+  const shuffled = [...studentList].sort(() => Math.random() - 0.5); // shuffle current studentList
   const map = {};
   let idx = 0;
   for (let t = 0; t < 6; t++) {
     for (let s = 0; s < 4; s++) {
-      const student = shuffled[idx] ?? null; // fill with student or null if none left
+      const student = shuffled[idx] ?? null;
       map[`table-${t}-seat-${s}`] = student;
-      idx += 1;
+      idx++;
     }
   }
   return map;
 };
+
 
 
   const [seatMap, setSeatMap] = useState(generateSeatMap);
@@ -272,30 +302,48 @@ export default function App() {
           <label className="font-bold">Upload CSV</label>
           <span className="text-gray-400 cursor-pointer">?</span>
         </div>
-        <div className="space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center space-x-2">
-              <select className="w-full border p-2 rounded">
-                <option>First Name Last Name</option>
-              </select>
-              <input
-                type="text"
-                className="w-full border p-2 rounded"
-                placeholder="Student Name"
-              />
-              <span className="text-green-500">✓</span>
-            </div>
-          ))}
-        </div>
-          <button
-            onClick={() => {
-              setSeatMap(generateSeatMap());
-              setUnseated([]);
-            }}
-            className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-          >
-            Generate Seating Chart
-          </button>
+<div className="space-y-2">
+  <div className="flex items-center space-x-2">
+    <input
+      type="text"
+      className="w-full border p-2 rounded"
+      placeholder="Enter student name"
+      value={studentInput}
+      onChange={(e) => setStudentInput(e.target.value)}
+    />
+    <button
+      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+      onClick={() => {
+        if (studentInput.trim() !== "") {
+          setStudentList((prev) => [...prev, studentInput.trim()]);
+          setStudentInput("");
+        }
+      }}
+    >
+      Add
+    </button>
+  </div>
+
+  {studentList.length > 0 && (
+    <ul className="list-disc list-inside text-gray-700">
+      {studentList.map((s, i) => (
+        <li key={i}>{s}</li>
+      ))}
+    </ul>
+  )}
+</div>
+
+  <button
+    className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+    onClick={() => {
+      const newMap = generateSeatMapFromList(studentList);
+      setSeatMap(newMap);
+      setUnseated([]);
+    }}
+  >
+    Generate Seating Chart
+  </button>
+
 
       </div>
 
