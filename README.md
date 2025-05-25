@@ -19,6 +19,7 @@ This project is a web application designed to help educators easily create and m
 ![black_logo](https://github.com/veryboi/seating/blob/main/black_logo.png)
 ![white_logo](https://github.com/veryboi/seating/blob/main/white_logo.png)
 
-## Running the Interaction Flow
+## Interaction Flow
 
-To run run the interaction flow, clone this project. Then, within the project directory, run `npm install`. Finally, run `npm run dev`. 
+## Running the Interaction Flow
+To run the interaction flow, clone this project. Then, within the project directory, run `npm install`. Finally, run `npm run dev`. 
