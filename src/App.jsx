@@ -360,21 +360,44 @@ function LayoutEditor({ classroom, setClassroom }) {
   /******************************************************************
    *  DESK MANIPULATION HELPERS
    *****************************************************************/
-  const handleDeskPositionChange = (dIdx, newPos) =>
+  const handleDeskPositionChange = (dIdx, newPos) => {
+    // Define boundaries - adjust these values based on your layout size
+    const minX = 50;
+    const minY = 50;
+    const maxX = 900; // Match the approximate width of your editor
+    const maxY = 550; // Match the approximate height of your editor
+  
+    // Constrain the position to stay within boundaries
+    const boundedX = Math.min(Math.max(newPos[0], minX), maxX);
+    const boundedY = Math.min(Math.max(newPos[1], minY), maxY);
+  
     setDesks((prev) => {
       const next = [...prev];
-      next[dIdx] = { ...next[dIdx], position: newPos };
+      next[dIdx] = { ...next[dIdx], position: [boundedX, boundedY] };
       return next;
     });
+  };
 
-  const handleSeatPositionChange = (dIdx, seatIdx, newPos) =>
+  const handleSeatPositionChange = (dIdx, seatIdx, newPos) => {
+    // Limit how far a seat can be from desk center (reasonable values)
+    const maxDistance = 100;
+    const distance = Math.sqrt(newPos[0]**2 + newPos[1]**2);
+    
+    let constrainedPos = [...newPos];
+    if (distance > maxDistance) {
+      // Scale the position to be within max distance
+      const scale = maxDistance / distance;
+      constrainedPos = [newPos[0] * scale, newPos[1] * scale];
+    }
+    
     setDesks((prev) => {
       const next = [...prev];
       const seats = [...next[dIdx].seats];
-      seats[seatIdx] = newPos;
+      seats[seatIdx] = constrainedPos;
       next[dIdx] = { ...next[dIdx], seats };
       return next;
     });
+  };
 
   const addRectangleDesk = () => {
     setDesks((prev) => [
@@ -519,6 +542,25 @@ function LayoutEditor({ classroom, setClassroom }) {
         <button className="bg-green-600 text-white px-3 py-2 rounded" onClick={downloadJson}>
           Download JSON
         </button>
+        <button 
+          className="bg-yellow-500 text-white px-3 py-2 rounded"
+          onClick={() => {
+            // Reset all desk positions to be centered in the viewport
+            setDesks(prev => {
+              return prev.map((desk, index) => {
+                // Distribute desks in a grid-like pattern
+                const row = Math.floor(index / 3);
+                const col = index % 3;
+                return {
+                  ...desk,
+                  position: [200 + col * 250, 150 + row * 200],
+                };
+              });
+            });
+          }}
+        >
+          Center All Desks
+        </button>
       </div>
 
       {/* Main editor area */}
@@ -538,8 +580,12 @@ function LayoutEditor({ classroom, setClassroom }) {
   }}
 >
   <div
-    className="relative flex-1 border rounded bg-slate-100 overflow-hidden"
-    style={{ minHeight: 600 }}
+    className="relative flex-1 border rounded bg-slate-100 overflow-auto"
+    style={{ 
+      minHeight: 500, 
+      maxHeight: 500,  // Fixed height to match seating tab
+      width: "100%", 
+    }}
     onClick={() => setSelectedDesk(null)}
   >
     {desks.map((desk, i) => (
@@ -1082,18 +1128,21 @@ function importStudents(file) {
               <StudentPool students={unseated} studentTags={studentTags} onAddTag={handleAddTag} />
 
               {/* DESK LAYOUT */}
-              <div className="relative mt-4 w-full h-[500px] border border-gray-300 rounded bg-slate-50 overflow-hidden">
-                {classroom.desks.map((desk, i) => (
-                  <ViewerDesk
-                    key={i}
-                    desk={desk}
-                    deskIndex={i}
-                    seatMap={seatMap}
-                    studentTags={studentTags}
-                    onAddTag={handleAddTag}
-                  />
-                ))}
-              </div>
+              <div 
+  className="relative mt-4 w-full h-[500px] border border-gray-300 rounded bg-slate-50 overflow-auto"
+>
+  {classroom.desks.map((desk, i) => (
+    <ViewerDesk
+      key={i}
+      desk={desk}
+      deskIndex={i}
+      seatMap={seatMap}
+      studentTags={studentTags}
+      onAddTag={handleAddTag}
+    />
+  ))}
+</div>
+
             </DndContext>
           </div>
         </div>
