@@ -34,6 +34,8 @@ function SeatingTab({
 }) {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [studentInput, setStudentInput] = useState("");
+  const [isGeneratingCDL, setIsGeneratingCDL] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleAddTag = (studentId, tag) => {
@@ -249,8 +251,10 @@ function SeatingTab({
 
           <div className="flex gap-2">
             <button
-              className="bg-blue-600 text-white px-3 py-1 rounded"
+              className={`bg-blue-600 text-white px-3 py-1 rounded flex items-center gap-2 ${isGeneratingCDL ? 'opacity-75 cursor-not-allowed' : 'hover:bg-blue-700'}`}
               onClick={async () => {
+                if (isGeneratingCDL) return;
+                setIsGeneratingCDL(true);
                 try {
                   const promptText = buildUserPrompt(
                     noteForChart,
@@ -281,14 +285,27 @@ function SeatingTab({
                   
                   setCdlDraft(cdlString);
                   setDebug({ prompt: promptText, cdl });
-                  alert("CDL generated successfully. You can now generate the chart or edit the CDL.");
+                  setShowSuccessModal(true);
                 } catch (err) {
                   console.error("Could not generate CDL:", err);
                   alert("Could not generate CDL:\n" + (err?.message || String(err)));
+                } finally {
+                  setIsGeneratingCDL(false);
                 }
               }}
+              disabled={isGeneratingCDL}
             >
-              Generate CDL
+              {isGeneratingCDL ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>Generating...</span>
+                </>
+              ) : (
+                'Generate CDL'
+              )}
             </button>
             <button
               className="bg-emerald-600 text-white px-3 py-1 rounded"
@@ -316,12 +333,6 @@ function SeatingTab({
               }}
             >
               Generate Chart
-            </button>
-            <button
-              className="bg-gray-700 text-white px-3 py-1 rounded"
-              onClick={() => setShowCdlEditor(true)}
-            >
-              Edit CDL
             </button>
             <div className="border-l mx-2" />
             <button
@@ -379,6 +390,26 @@ function SeatingTab({
           </div>
         </DndContext>
       </div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md">
+            <h3 className="text-lg font-semibold mb-2">CDL Generated Successfully!</h3>
+            <p className="text-gray-600 mb-4">
+              Your constraints have been generated. You can view and edit them in the Constraints tab.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                onClick={() => setShowSuccessModal(false)}
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

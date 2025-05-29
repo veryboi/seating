@@ -459,7 +459,7 @@ const BlockEditor = ({ value, onChange, students = [], studentTags = {}, desks =
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div>
+      <div className="pt-4">
         <RuleTypeSelector onSelect={handleAddRule} />
         <div className="space-y-4">
           {rules.map((ruleData, index) => {

@@ -34,6 +34,7 @@ import LayoutEditor from "./components/LayoutEditor";
 import DebugModal from "./components/modals/DebugModal";
 import CDLEditorModal from "./components/modals/CDLEditorModal";
 import SeatingTab from "./components/SeatingTab";
+import ConstraintsTab from "./components/ConstraintsTab";
 
 // Import utilities
 import {
@@ -405,6 +406,7 @@ function importStudents(file) {
       <div className="flex">
         {[
           { key: "seating", label: "Seating Sandbox" },
+          { key: "constraints", label: "Constraints" },
           { key: "editor", label: "Layout Editor" },
         ].map((t) => (
           <button
@@ -422,9 +424,9 @@ function importStudents(file) {
         <SeatingTab
           studentList={studentList}
           setStudentList={setStudentList}
-        studentTags={studentTags}
+          studentTags={studentTags}
           setStudentTags={setStudentTags}
-        studentNotes={studentNotes}
+          studentNotes={studentNotes}
           setStudentNotes={setStudentNotes}
           customTags={customTags}
           setCustomTags={setCustomTags}
@@ -449,31 +451,24 @@ function importStudents(file) {
         />
       )}
 
+      {/* --- CONSTRAINTS TAB -------------------------------------------- */}
+      {tab === "constraints" && (
+        <ConstraintsTab
+          cdlDraft={cdlDraft}
+          setCdlDraft={setCdlDraft}
+          studentList={studentList}
+          studentTags={studentTags}
+          desks={classroom.desks}
+        />
+      )}
+
       {/* --- EDITOR TAB -------------------------------------------------- */}
       {tab === "editor" && <LayoutEditor classroom={classroom} setClassroom={setClassroom} />}
 
       {/* DEBUG MODAL */}
-{debug && (
+      {debug && (
         <DebugModal debug={debug} onClose={() => setDebug(null)} />
-)}
-
-      {/* CDL EDITOR MODAL */}
-{showCdlEditor && (
-        <CDLEditorModal
-          isOpen={showCdlEditor}
-          cdlDraft={cdlDraft}
-          onClose={() => setShowCdlEditor(false)}
-          onSave={(obj) => {
-            setManualCdl(obj);
-            setCdlDraft(JSON.stringify(obj, null, 2));  // Update cdlDraft with the new CDL
-            setShowCdlEditor(false);
-            alert("Manual CDL saved. Next Generate Chart will use it.");
-          }}
-          students={studentList}
-          studentTags={studentTags}
-          desks={classroom.desks}
-        />
-)}
+      )}
     </div>
   );
 }
