@@ -457,7 +457,7 @@ function importStudents(file) {
           cdlDraft={cdlDraft}
           setCdlDraft={setCdlDraft}
           studentList={studentList}
-          studentTags={studentTags}
+        studentTags={studentTags}
           desks={classroom.desks}
         />
       )}
@@ -466,7 +466,7 @@ function importStudents(file) {
       {tab === "editor" && <LayoutEditor classroom={classroom} setClassroom={setClassroom} />}
 
       {/* DEBUG MODAL */}
-      {debug && (
+{debug && (
         <DebugModal debug={debug} onClose={() => setDebug(null)} />
       )}
     </div>

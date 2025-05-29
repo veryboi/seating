@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const generateRuleSummary = (type, rule) => {
   console.log('Generating summary for:', { type, rule });
@@ -76,7 +76,9 @@ const generateRuleSummary = (type, rule) => {
   }
 };
 
-const DraggableBlock = ({ type, rule, children, onRemove, isDragging }) => {
+const DraggableBlock = ({ type, rule, children, onRemove, isDragging, isNew }) => {
+  const [isExpanded, setIsExpanded] = useState(isNew);
+
   const blockColors = {
     balance: 'bg-blue-100 border-blue-300',
     group: 'bg-green-100 border-green-300',
@@ -104,23 +106,38 @@ const DraggableBlock = ({ type, rule, children, onRemove, isDragging }) => {
         hover:shadow-md
       `}
     >
-      <div className="flex justify-between items-start mb-2">
-        <div className="space-y-1">
-          <span className="font-semibold capitalize">{displayType} Rule</span>
+      <div className="flex justify-between items-start">
+        <button 
+          className="flex-1 text-left space-y-1 cursor-pointer"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <div className="flex items-center gap-2">
+            <span className="font-semibold capitalize">{displayType} Rule</span>
+            <svg 
+              className={`w-4 h-4 transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
           {summary && summary !== `${type} rule` && (
             <div className="text-sm text-gray-600">{summary}</div>
           )}
-        </div>
+        </button>
         <button 
           onClick={onRemove}
-          className="text-gray-500 hover:text-red-500 transition-colors"
+          className="text-gray-500 hover:text-red-500 transition-colors ml-2"
         >
           ×
         </button>
       </div>
-      <div className="space-y-2">
-        {children}
-      </div>
+      {isExpanded && (
+        <div className="mt-4 space-y-2">
+          {children}
+        </div>
+      )}
     </div>
   );
 };

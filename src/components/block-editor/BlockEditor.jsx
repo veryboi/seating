@@ -4,7 +4,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import DraggableBlock from './DraggableBlock';
 import RuleTypeSelector from './RuleTypeSelector';
 import StudentSelector from './StudentSelector';
-import SeatSelector from './SeatSelector';
+import VisualSeatSelector from './VisualSeatSelector';
 import { isCDL } from '../../lib/cdl.validate';
 
 // Ensure we have valid arrays for students and tags
@@ -149,7 +149,7 @@ const PreferenceRuleContent = ({ rule, onChange, students, studentTags, desks })
     </div>
     <div>
       <label className="block text-sm mb-1">Location</label>
-      <SeatSelector
+      <VisualSeatSelector
         desks={ensureArray(desks)}
         value={{ 
           deskIds: ensureArray(rule.deskIds), 
@@ -264,7 +264,7 @@ const OrderingRuleContent = ({ rule, onChange, students }) => (
   </div>
 );
 
-const DraggableRule = ({ id, rule, type, index, moveRule, onRemove, onChange, students, studentTags, desks }) => {
+const DraggableRule = ({ id, rule, type, index, moveRule, onRemove, onChange, students, studentTags, desks, isNew }) => {
   // Add debug logging
   console.log('DraggableRule props:', { id, type, rule });
 
@@ -310,6 +310,7 @@ const DraggableRule = ({ id, rule, type, index, moveRule, onRemove, onChange, st
         rule={rule} 
         onRemove={onRemove} 
         isDragging={isDragging}
+        isNew={isNew}
       >
         {renderContent()}
       </DraggableBlock>
@@ -453,8 +454,8 @@ const BlockEditor = ({ value, onChange, students = [], studentTags = {}, desks =
         break;
     }
     
-    const newRule = { type, rule: initialRule };
-    setRules([...rules, newRule]);
+    const newRule = { type, rule: initialRule, isNew: true };  // Add isNew flag
+    setRules([newRule, ...rules.map(r => ({ ...r, isNew: false }))]);  // Add new rule at the beginning and mark all others as not new
   };
 
   return (
@@ -471,6 +472,7 @@ const BlockEditor = ({ value, onChange, students = [], studentTags = {}, desks =
                 index={index}
                 type={ruleData.type}
                 rule={ruleData.rule}
+                isNew={ruleData.isNew}  // Pass isNew prop
                 moveRule={moveRule}
                 onRemove={() => {
                   const newRules = [...rules];
@@ -479,7 +481,7 @@ const BlockEditor = ({ value, onChange, students = [], studentTags = {}, desks =
                 }}
                 onChange={(newRule) => {
                   const newRules = [...rules];
-                  newRules[index] = { ...newRules[index], rule: newRule };
+                  newRules[index] = { ...newRules[index], rule: newRule, isNew: false };  // Remove isNew flag on edit
                   setRules(newRules);
                 }}
                 students={students}

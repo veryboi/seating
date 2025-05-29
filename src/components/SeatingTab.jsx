@@ -36,6 +36,7 @@ function SeatingTab({
   const [studentInput, setStudentInput] = useState("");
   const [isGeneratingCDL, setIsGeneratingCDL] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleAddTag = (studentId, tag) => {
@@ -249,104 +250,120 @@ function SeatingTab({
             />
           </div>
 
-          <div className="flex gap-2">
-            <button
-              className={`bg-blue-600 text-white px-3 py-1 rounded flex items-center gap-2 ${isGeneratingCDL ? 'opacity-75 cursor-not-allowed' : 'hover:bg-blue-700'}`}
-              onClick={async () => {
-                if (isGeneratingCDL) return;
-                setIsGeneratingCDL(true);
-                try {
-                  const promptText = buildUserPrompt(
-                    noteForChart,
-                    studentNotes,
-                    studentTags,
-                    [...presetTags, ...customTags]
-                  );
+          <div className="flex items-center justify-between border-t pt-4">
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300"
+                  checked={debugMode}
+                  onChange={(e) => setDebugMode(e.target.checked)}
+                />
+                <span>Debug Mode</span>
+              </label>
+            </div>
 
-                  console.log('Generating CDL with:', {
-                    noteForChart,
-                    studentNotes,
-                    studentTags,
-                    desks: classroom.desks,
-                    tags: [...presetTags, ...customTags]
-                  });
+            <div className="flex gap-2">
+              <button
+                className={`bg-blue-600 text-white px-3 py-1 rounded flex items-center gap-2 ${isGeneratingCDL ? 'opacity-75 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+                onClick={async () => {
+                  if (isGeneratingCDL) return;
+                  setIsGeneratingCDL(true);
+                  try {
+                    const promptText = buildUserPrompt(
+                      noteForChart,
+                      studentNotes,
+                      studentTags,
+                      [...presetTags, ...customTags]
+                    );
 
-                  const cdl = await compileNotesToCDL(
-                    noteForChart,
-                    studentNotes,
-                    studentTags,
-                    classroom.desks,
-                    [...presetTags, ...customTags]
-                  );
-                  
-                  console.log('Generated CDL:', cdl);
-                  const cdlString = JSON.stringify(cdl, null, 2);
-                  console.log('Stringified CDL:', cdlString);
-                  
-                  setCdlDraft(cdlString);
-                  setDebug({ prompt: promptText, cdl });
-                  setShowSuccessModal(true);
-                } catch (err) {
-                  console.error("Could not generate CDL:", err);
-                  alert("Could not generate CDL:\n" + (err?.message || String(err)));
-                } finally {
-                  setIsGeneratingCDL(false);
-                }
-              }}
-              disabled={isGeneratingCDL}
-            >
-              {isGeneratingCDL ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  <span>Generating...</span>
-                </>
-              ) : (
-                'Generate CDL'
-              )}
-            </button>
-            <button
-              className="bg-emerald-600 text-white px-3 py-1 rounded"
-              onClick={() => {
-                try {
-                  const cdl = JSON.parse(cdlDraft);
-                  const seatMapNew = runOptimizer(
-                    studentList.map((id) => ({
-                      id,
-                      firstName: id.split(" ")[0],
-                      lastName: id.split(" ").slice(1).join(" ") || id,
-                      tags: studentTags[id] || [],
-                    })),
-                    classroom.desks,
-                    cdl
-                  );
+                    console.log('Generating CDL with:', {
+                      noteForChart,
+                      studentNotes,
+                      studentTags,
+                      desks: classroom.desks,
+                      tags: [...presetTags, ...customTags]
+                    });
 
-                  setSeatMap(seatMapNew);
-                  const seated = new Set(Object.values(seatMapNew).filter(Boolean));
-                  setUnseated(studentList.filter((s) => !seated.has(s)));
-                } catch (err) {
-                  console.log("Could not generate chart:\n" + (err?.message || String(err)));
-                  alert("Could not generate chart:\n" + (err?.message || String(err)));
-                }
-              }}
-            >
-              Generate Chart
-            </button>
-            <div className="border-l mx-2" />
-            <button
-              className="bg-emerald-500 text-white px-3 rounded"
-              onClick={() => document.getElementById("importStudentsInput").click()}
-            >
-              Import
-            </button>
-            <button
-              className="bg-emerald-600 text-white px-3 rounded"
-              onClick={() => exportStudents(studentList, studentTags, studentNotes, customTags)}
-            >
-              Export
-            </button>
+                    const cdl = await compileNotesToCDL(
+                      noteForChart,
+                      studentNotes,
+                      studentTags,
+                      classroom.desks,
+                      [...presetTags, ...customTags]
+                    );
+                    
+                    console.log('Generated CDL:', cdl);
+                    const cdlString = JSON.stringify(cdl, null, 2);
+                    console.log('Stringified CDL:', cdlString);
+                    
+                    setCdlDraft(cdlString);
+                    if (debugMode) {
+                      setDebug({ prompt: promptText, cdl });
+                    }
+                    setShowSuccessModal(true);
+                  } catch (err) {
+                    console.error("Could not generate CDL:", err);
+                    alert("Could not generate CDL:\n" + (err?.message || String(err)));
+                  } finally {
+                    setIsGeneratingCDL(false);
+                  }
+                }}
+                disabled={isGeneratingCDL}
+              >
+                {isGeneratingCDL ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Generating...</span>
+                  </>
+                ) : (
+                  'Generate CDL'
+                )}
+              </button>
+              <button
+                className="bg-emerald-600 text-white px-3 py-1 rounded"
+                onClick={() => {
+                  try {
+                    const cdl = JSON.parse(cdlDraft);
+                    const seatMapNew = runOptimizer(
+                      studentList.map((id) => ({
+                        id,
+                        firstName: id.split(" ")[0],
+                        lastName: id.split(" ").slice(1).join(" ") || id,
+                        tags: studentTags[id] || [],
+                      })),
+                      classroom.desks,
+                      cdl
+                    );
+
+                    setSeatMap(seatMapNew);
+                    const seated = new Set(Object.values(seatMapNew).filter(Boolean));
+                    setUnseated(studentList.filter((s) => !seated.has(s)));
+                  } catch (err) {
+                    console.log("Could not generate chart:\n" + (err?.message || String(err)));
+                    alert("Could not generate chart:\n" + (err?.message || String(err)));
+                  }
+                }}
+              >
+                Generate Chart
+              </button>
+              <div className="border-l mx-2" />
+              <button
+                className="bg-emerald-500 text-white px-3 rounded"
+                onClick={() => document.getElementById("importStudentsInput").click()}
+              >
+                Import
+              </button>
+              <button
+                className="bg-emerald-600 text-white px-3 rounded"
+                onClick={() => exportStudents(studentList, studentTags, studentNotes, customTags)}
+              >
+                Export
+              </button>
+            </div>
           </div>
         </div>
       </div>

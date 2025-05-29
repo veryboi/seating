@@ -3,7 +3,14 @@ import { DndContext, pointerWithin } from "@dnd-kit/core";
 import DraggableDesk from "./DraggableDesk";
 
 function LayoutEditor({ classroom, setClassroom }) {
-  const [desks, setDesks] = useState(() => JSON.parse(JSON.stringify(classroom.desks)));
+  const [desks, setDesks] = useState(() => {
+    const initialDesks = JSON.parse(JSON.stringify(classroom.desks));
+    // Ensure each desk has an ID
+    return initialDesks.map((desk, index) => ({
+      ...desk,
+      id: desk.id || `desk-${index}`,
+    }));
+  });
   const [selectedDesk, setSelectedDesk] = useState(null);
   const [selectedSeat, setSelectedSeat] = useState(null);
   const fileInputRef = useRef(null);
@@ -34,48 +41,60 @@ function LayoutEditor({ classroom, setClassroom }) {
     });
 
   const addRectangleDesk = () => {
-    setDesks((prev) => [
-      ...prev,
-      {
-        position: [250, 250],
-        seats: [
-          [-30, -20],
-          [30, -20],
-          [-30, 20],
-          [30, 20],
-        ],
-        shape: { type: "rectangle", width: 120, height: 70 },
-      },
-    ]);
+    setDesks((prev) => {
+      const newIndex = prev.length;
+      return [
+        ...prev,
+        {
+          id: `desk-${newIndex}`,
+          position: [250, 250],
+          seats: [
+            [-30, -20],
+            [30, -20],
+            [-30, 20],
+            [30, 20],
+          ],
+          shape: { type: "rectangle", width: 120, height: 70 },
+        },
+      ];
+    });
   };
 
   const addCircleDesk = () => {
-    setDesks((prev) => [
-      ...prev,
-      {
-        position: [250, 250],
-        seats: [],
-        shape: { type: "circle", radius: 70 },
-      },
-    ]);
+    setDesks((prev) => {
+      const newIndex = prev.length;
+      return [
+        ...prev,
+        {
+          id: `desk-${newIndex}`,
+          position: [250, 250],
+          seats: [],
+          shape: { type: "circle", radius: 70 },
+        },
+      ];
+    });
   };
 
   const addPolygonDesk = () => {
-    setDesks((prev) => [
-      ...prev,
-      {
-        position: [250, 250],
-        seats: [],
-        shape: {
-          type: "polygon",
-          points: [
-            [0, -50],
-            [45, 35],
-            [-45, 35],
-          ],
+    setDesks((prev) => {
+      const newIndex = prev.length;
+      return [
+        ...prev,
+        {
+          id: `desk-${newIndex}`,
+          position: [250, 250],
+          seats: [],
+          shape: {
+            type: "polygon",
+            points: [
+              [0, -50],
+              [45, 35],
+              [-45, 35],
+            ],
+          },
         },
-      },
-    ]);
+      ];
+    });
   };
 
   const addSeatToSelectedDesk = () => {
@@ -118,7 +137,12 @@ function LayoutEditor({ classroom, setClassroom }) {
       try {
         const data = JSON.parse(evt.target.result);
         if (Array.isArray(data.desks)) {
-          setDesks(data.desks);
+          // Ensure each desk has an ID
+          const desksWithIds = data.desks.map((desk, index) => ({
+            ...desk,
+            id: desk.id || `desk-${index}`,
+          }));
+          setDesks(desksWithIds);
           setSelectedDesk(null);
         } else {
           alert("JSON must contain a 'desks' array");
