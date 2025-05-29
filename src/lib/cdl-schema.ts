@@ -45,7 +45,7 @@ export interface Seat {
 
     preferences?: PreferenceRule[];
   
-    /** Room-wide settings that aren't expressible via balanceRules */
+    /** Room-wide settings that aren’t expressible via balanceRules */
     global?: GlobalRules;
   
     /** How the queue is ordered before filling seats */
@@ -60,15 +60,15 @@ export interface Seat {
     scope: "desk" | "row" | "room";
     mode: "even" | "max" | "min";
     value?: number;                        // used by max / min
-    tolerance?: number;                    // allowed imbalance for "even"
+    tolerance?: number;                    // allowed imbalance for “even”
   };
   
   export type GroupRule = {
     tags?: string[];
     students?: string[];
     relation: "together" | "apart";
-    minDistance?: number;                  // "apart" by ≥ N seats
-    clusterSize?: number;                  // "together" in groups of N
+    minDistance?: number;                  // “apart” by ≥ N seats
+    clusterSize?: number;                  // “together” in groups of N
   };
   
   export type GlobalRules = {
@@ -90,8 +90,6 @@ export type PreferenceRule = {
     seatIds?: string[];           // explicit seat list
     deskIds?: string[];           // any seat belonging to these desks
     
-    /** Whether this is a positive or negative preference */
-    modifier?: "prefers" | "does not prefer";  // default: "prefers"
     
     /** Positive reward; optimiser subtracts this from cost when satisfied */
     weight: number;
@@ -161,7 +159,6 @@ export type PreferenceRule = {
             tags:     { type: "array", items: { type: "string" }, minItems: 1 },
             seatIds:  { type: "array", items: { type: "string" }, minItems: 1 },
             deskIds:  { type: "array", items: { type: "string" }, minItems: 1 },
-            modifier: { enum: ["prefers", "does not prefer"] },
             weight:   { type: "integer", minimum: 1 }
           },
   
