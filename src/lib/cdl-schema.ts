@@ -42,6 +42,8 @@ export interface Seat {
   
     /** Together / apart constraints */
     groups?: GroupRule[];
+
+    preferences?: PreferenceRule[];
   
     /** Room-wide settings that aren’t expressible via balanceRules */
     global?: GlobalRules;
@@ -78,6 +80,20 @@ export interface Seat {
     | { type: "alphabetic"; by: "first" | "last"; direction?: "asc" | "desc" }
     | { type: "random" }
     | { type: "custom"; order: string[] };
+
+export type PreferenceRule = {
+    /** Apply to one student (exact match) or any student with these tags */
+    student?: string;             // "Any" = wildcard
+    tags?: string[];              // mutually exclusive with student (unless student === "Any")
+    
+    /** How to match seats */
+    seatIds?: string[];           // explicit seat list
+    deskIds?: string[];           // any seat belonging to these desks
+    
+    
+    /** Positive reward; optimiser subtracts this from cost when satisfied */
+    weight: number;
+    };
   
   /* ------------------------------------------------------------------ */
   /*  3 ▸  Runtime JSON-Schema (draft-07) for AJV validation            */
@@ -132,6 +148,28 @@ export interface Seat {
         }
       },
   
+      preferences: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["weight"],
+          additionalProperties: false,
+          properties: {
+            student:  { type: "string" },
+            tags:     { type: "array", items: { type: "string" }, minItems: 1 },
+            seatIds:  { type: "array", items: { type: "string" }, minItems: 1 },
+            deskIds:  { type: "array", items: { type: "string" }, minItems: 1 },
+            weight:   { type: "integer", minimum: 1 }
+          },
+  
+          /* must specify at least seatIds or deskIds */
+          anyOf: [
+            { required: ["seatIds"] },
+            { required: ["deskIds"] }
+          ]
+        }
+      },
+      
       groups: {
         type: "array",
         items: {

@@ -1,199 +1,196 @@
 /*  src/lib/llm.compiler.ts
  *  -----------------------------------------------------------
- *  Convert chart / student notes → CDL via Google Gemini
+ *  Convert chart / student notes + layout → CDL via Google Gemini
  *  -----------------------------------------------------------
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { CDL } from "./cdl-schema";
+import { CDL, Desk } from "./cdl-schema";
 import { parseCDL } from "./cdl.validate";
 
 /* ------------------------------------------------------------------ */
-/*  Public API                                                        */
+/*  Options                                                           */
 /* ------------------------------------------------------------------ */
 
 export interface CompileOpts {
-  model?: string;          // Gemini model (default "gemini-pro")
+  model?: string;          // Gemini model ID
   temperature?: number;    // default 0.1
-  retries?: number;        // JSON-repair attempts (default 2)
+  retries?: number;        // JSON-repair attempts
   signal?: AbortSignal;    // optional abort
 }
 
-/**
- * Compile free-form teacher notes into a validated CDL object.
- *
- * @param chartNote     – overall instruction field
- * @param studentNotes  – per-student text notes (name → note)
- * @param studentTags   – per-student tag array (name → tags[])
- * @param allTags       – global list of valid tags
- */
+/* ------------------------------------------------------------------ */
+/*  Main entry                                                        */
+/* ------------------------------------------------------------------ */
+
 export async function compileNotesToCDL(
   chartNote: string,
   studentNotes: Record<string, string>,
   studentTags: Record<string, string[]>,
+  layout: Desk[],
   allTags: string[],
-  opts: CompileOpts = {}
+  opts: CompileOpts = {},
 ): Promise<CDL> {
   const {
-    model = "gemini-2.0-flash-lite",
-    temperature = 0.1,
-    retries = 2,
+    model        = "gemini-2.5-flash-preview-04-17",
+    temperature  = 0.1,
+    retries      = 2,
     signal,
   } = opts;
 
-  /* ——— Prompt blocks ——— */
+  /* ---------- static prompt blocks ---------- */
+
   const SYSTEM_PROMPT = `
-You are a compiler that converts teacher instructions into a JSON
-object that follows the CDL schema (Constraint-Description Language).
-Return ONLY valid JSON — no code fences, no commentary.`.trim();
+You are a strict compiler. Convert teacher instructions **and** the classroom
+layout into CDL JSON (Constraint-Description Language).
+Return ONLY valid JSON — no markdown fences, no prose.`.trim();
 
-  const SCHEMA_HINT = `
-Allowed top-level keys: desks, seats, balanceRules, groups, ordering
+const SCHEMA_HINT = `
+CDL keys you may emit
+  desks · seats · balanceRules · groups · preferences · ordering
 
-balanceRules item
-  {tags[], scope("desk"|"row"|"room"), mode("even"|"max"|"min"), value?, tolerance?}
+❌  Do NOT copy the classroom layout into “desks” / “seats”.
+    Emit those keys ONLY to pin a student with
+      { deskId, forcedStudent }   or   { seatId, forcedStudent }.
 
-ordering
-  {type:"alphabetic", by:"first"|"last", direction?:"asc"|"desc"}
-  {type:"random"}
-  {type:"custom", order:[studentIds…]}
+preferences  (soft seat-affinity rewards)
+  {
+    student?:  "Exact Name" | "Any",
+    tags?:     ["TagA","TagB"],
 
-group rule
-  {tags?[], students?[], relation:"together"|"apart", minDistance?, clusterSize?}
+    seatIds?:  ["desk-1/seat-0", …],
+    deskIds?:  ["desk-5", …],
 
-No other keys are permitted.`.trim();
+    weight:    1..∞       // positive reward
+  }
 
-  const FEW_SHOT = `
+  • You MUST include seatIds OR deskIds (or both). No selector field.
+  • Allowed keys are exactly: student, tags, seatIds, deskIds, weight.
+    Anything else (relation, selector, etc.) is forbidden.
+
+groups item
+  { tags?[], students?[], relation:"together"|"apart",
+    minDistance?, clusterSize? }
+
+ordering & balanceRules unchanged.  Use id strings exactly as in layout JSON.`.trim();
+
+
+
+
+const FEW_SHOT = `
 User:
-Balance boys and girls per desk (±1), separate any "Disruptive".
+"Seat Ava ONLY at desk-0/seat-0 or desk-0/seat-1."
 Assistant:
 {
-  "balanceRules":[
-    {"tags":["Male","Female"],"scope":"desk","mode":"even","tolerance":1}
-  ],
-  "groups":[
-    {"tags":["Disruptive"],"relation":"apart"}
+  "preferences":[
+    { "student":"Ava Kim",
+      "seatIds":["desk-0/seat-0","desk-0/seat-1"],
+      "weight":5 }
   ]
 }
 
 User:
-Reverse alphabetic by last name; max 1 Talkative per row.
+"Any student tagged Needs Assistance should sit at desk-5."
 Assistant:
 {
-  "ordering":{"type":"alphabetic","by":"last","direction":"desc"},
-  "balanceRules":[
-    {"tags":["Talkative"],"scope":"row","mode":"max","value":1}
+  "preferences":[
+    { "tags":["Needs Assistance"], "deskIds":["desk-5"], "weight":3 }
   ]
 }
-`.trim();
 
+User:
+"Charlie prefers the big rectangle desk (desk-2)."
+Assistant:
+{
+  "preferences":[
+    { "student":"Charlie Lee", "deskIds":["desk-2"], "weight":2 }
+  ]
+}`.trim();
+
+
+  /* ---------- user-specific block ---------- */
   const USER_PROMPT = buildUserPrompt(
     chartNote,
     studentNotes,
     studentTags,
-    allTags
+    layout,
+    allTags,
   );
 
-  /* ——— Init Gemini client ——— */
+  /* ---------- Gemini client ---------- */
   const apiKey =
-    // vite / react-scripts
-    (typeof import.meta !== "undefined" &&
-      (import.meta as any).env?.VITE_GEMINI_API_KEY) ||
-    (typeof import.meta !== "undefined" &&
-      (import.meta as any).env?.REACT_APP_GEMINI_API_KEY) ||
-    // manual global
-    (typeof window !== "undefined" && (window as any).GEMINI_API_KEY) ||
-    // Node fallback (tests)
-    process.env?.GEMINI_API_KEY;
+      (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_GEMINI_API_KEY)
+   || (typeof import.meta !== "undefined" && (import.meta as any).env?.REACT_APP_GEMINI_API_KEY)
+   || (typeof window !== "undefined"   && (window as any).GEMINI_API_KEY)
+   ||  process.env?.GEMINI_API_KEY;
 
   if (!apiKey) throw new Error("Gemini API key not found");
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const llm   = genAI.getGenerativeModel({ model });
 
-  /* ——— Assemble the full prompt ——— */
-  let basePrompt = [SYSTEM_PROMPT, SCHEMA_HINT, FEW_SHOT, USER_PROMPT].join(
-    "\n\n"
+  let prompt   = [SYSTEM_PROMPT, SCHEMA_HINT, FEW_SHOT, USER_PROMPT].join("\n\n");
+  let lastErr = "";
+let lastRaw = "";
+
+for (let attempt = 0; attempt <= retries; attempt++) {
+  const res = await llm.generateContent(
+    {
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: { temperature },
+    },
+    { signal }
   );
 
-  let attempt   = 0;
-  let lastError = "";
+  const raw = res.response.text().trim();
+  lastRaw = raw;
 
-  while (attempt <= retries) {
-    attempt++;
-
-    const result = await llm.generateContent(
-      {
-        contents: [{ role: "user", parts: [{ text: basePrompt }] }],
-        generationConfig: { temperature },
-      },
-      { signal }
-    );
-
-    const raw = result.response.text().trim();
-
-    try {
-        /* ── strip ``` fences if the model included them ── */
-        let jsonText = raw.trim();
-        if (jsonText.startsWith("```")) {
-          jsonText = jsonText
-            .replace(/^```[a-z]*\s*/i, "")   // opening fence + optional language tag
-            .replace(/```$/, "")             // closing fence
-            .trim();
-        }
-      
-        const json = JSON.parse(jsonText);
-        return parseCDL(json);               // throws if schema invalid
-      } catch (err) {
-        lastError = (err as Error).message;
-      
-        /* append feedback + invalid JSON so Gemini can self-correct */
-        const feedback = `
-      The JSON you produced was invalid or didn't match the schema:
-      ${lastError}
-      
-      Respond again with ONLY corrected JSON.`;
-      
-        basePrompt += "\n\nAssistant:\n" + raw + "\n\nUser:\n" + feedback;  // <— fixed concat
-      }
+  try {
+    const json = JSON.parse(stripFences(raw));
+    return parseCDL(json);
+  } catch (err) {
+    lastErr = (err as Error).message;
+    prompt +=
+      "\n\nAssistant:\n" + raw +
+      "\n\nUser:\nJSON invalid (" + lastErr + "). Respond again with corrected JSON only.";
   }
+}
 
-  throw new Error("compileNotesToCDL failed: " + lastError);
+throw new Error(
+  "compileNotesToCDL failed:\n" +
+  lastErr +
+  "\n\nLast JSON candidate :\n" +
+  lastRaw
+);
 }
 
 /* ------------------------------------------------------------------ */
-/*  Helper – build the user-level prompt                              */
+/*  Helpers                                                           */
 /* ------------------------------------------------------------------ */
+
+function stripFences(txt: string) {
+  if (txt.startsWith("```")) {
+    return txt.replace(/^```[a-z]*\s*/i, "").replace(/```$/, "").trim();
+  }
+  return txt;
+}
 
 function buildUserPrompt(
   chartNote: string,
   studentNotes: Record<string, string>,
   studentTags: Record<string, string[]>,
-  tags: string[]
+  layout: Desk[],
+  tagList: string[],
 ): string {
-  /* notes block */
-  const notesBlock =
-    Object.keys(studentNotes).length === 0
-      ? "(none)"
-      : Object.entries(studentNotes)
-          .map(([name, note]) => `${name}: ${note}`)
-          .join("\n");
+  const notesBlock = Object.entries(studentNotes)
+    .map(([n, t]) => `${n}: ${t}`)
+    .join("\n") || "(none)";
 
-  /* tags block */
-  const tagBlock =
-  Object.keys(studentTags).length === 0
-    ? "(none)"
-    : Object.entries(studentTags)
-        .map(([name, tgs]) => {
-          /* ensure we have an array of strings */
-          const arr = Array.isArray(tgs)
-            ? tgs
-            : tgs == null
-            ? []
-            : [String(tgs)];
-          return `${name}: ${arr.join(", ")}`;
-        })
-        .join("\n");
+  const tagBlock = Object.entries(studentTags)
+    .map(([n, arr]) => `${n}: ${(arr ?? []).join(", ")}`)
+    .join("\n") || "(none)";
+
+  const layoutBlock = JSON.stringify(layout, null, 2);
 
   return `
 STUDENT NOTES
@@ -204,13 +201,23 @@ STUDENT TAGS
 ------------
 ${tagBlock}
 
+CLASSROOM LAYOUT
+----------------
+• desk.position   is the top-left anchor of the desk.
+• seat.x / seat.y are ABSOLUTE canvas coords (desk.position + offset).
+• x grows to the RIGHT, y grows to the BACK:
+    y = 0   → front row
+    x = 0   → far left wall
+
+${layoutBlock}
+
 CHART NOTE
 ----------
 ${chartNote || "(none)"}
 
-TAG LIST (only these may be referenced)
---------------------------------------
-${JSON.stringify(tags)}
+TAG WHITELIST
+-------------
+${JSON.stringify(tagList)}
 `.trim();
 }
 

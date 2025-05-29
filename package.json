@@ -16,6 +16,8 @@
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "react": "^19.1.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^19.1.0",
     "seedrandom": "^3.0.5"
   },

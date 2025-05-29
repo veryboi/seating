@@ -4,7 +4,7 @@
 //  -----------------------------------------------------------
 
 import seedrandom from "seedrandom";
-import { CDL, BalanceRule, GroupRule, Seat, Desk } from "./cdl-schema";
+import { CDL, BalanceRule, GroupRule, PreferenceRule, Seat, Desk } from "./cdl-schema";
 
 /* ---------- Public layout & map types (align with UI) ---------- */
 export type Student = {
@@ -122,6 +122,8 @@ function normaliseLayout(desks: Desk[]): Desk[] {
     deskLookup = Object.fromEntries(
       out.flatMap((d) => d.seats.map((s) => [s.id, d.id]))
     );
+
+    
   
     return out;
   }
@@ -297,6 +299,30 @@ function normaliseLayout(desks: Desk[]): Desk[] {
         }
       }
     }
+
+    /* preference rules */
+  /* ---------- preference rewards ---------- */
+for (const pref of cdl.preferences ?? []) {
+    for (const [seatId, stuId] of Object.entries(map)) {
+      if (!stuId) continue;
+  
+      /* target check */
+      const okStudent =
+        pref.student === "Any" ||
+        (pref.student && pref.student === stuId) ||
+        (pref.tags &&
+          pref.tags.some(t => studentTagsOf(stuId).includes(t)));
+  
+      if (!okStudent) continue;
+  
+      /* location check */
+      const deskId   = deskLookup[seatId];
+      const seatHit  = pref.seatIds?.includes(seatId);
+      const deskHit  = pref.deskIds?.includes(deskId);
+  
+      if (seatHit || deskHit) score -= pref.weight;   // reward match
+    }
+  }
   
     return score;
   
@@ -311,6 +337,8 @@ function normaliseLayout(desks: Desk[]): Desk[] {
   
   /* ---------- utilities ---------- */
   
+
+
   function shuffle<T>(arr: T[], rng: seedrandom.PRNG): T[] {
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
