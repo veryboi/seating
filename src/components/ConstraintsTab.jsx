@@ -61,7 +61,7 @@ function ConstraintsTab({
   };
 
   return (
-    <div className="flex-1 p-4">
+    <div className="flex-1 h-full bg-gradient-to-br from-slate-50 to-slate-100">
       <input
         id="importCdlInput"
         type="file"
@@ -94,85 +94,114 @@ function ConstraintsTab({
         }}
       />
 
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="p-4 border-b">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h2 className="text-lg font-semibold">Seating Constraints</h2>
-              <p className="text-sm text-gray-600">
-                Define and edit constraints for student seating arrangements. Changes are automatically saved.
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex gap-2">
-                <button
-                  className="bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600"
-                  onClick={() => document.getElementById("importCdlInput").click()}
-                >
-                  Import CDL
-                </button>
-                <button
-                  className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700"
-                  onClick={exportCdl}
-                >
-                  Export CDL
-                </button>
+      <div className="h-full p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 h-full flex flex-col">
+          {/* HEADER */}
+          <div className="px-6 py-5 border-b border-slate-200">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-lg">⚙️</span>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-slate-900">Seating Constraints</h2>
+                    <p className="text-sm text-slate-600 mt-1">
+                      Define and edit constraints for student seating arrangements
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="border-l h-6 mx-2"></div>
-              <div className="flex gap-4">
-                <button
-                  className={`px-3 py-1 rounded-md transition-colors ${
-                    activeTab === 'blocks' 
-                      ? 'bg-blue-100 text-blue-700' 
-                      : 'hover:bg-gray-100'
-                  }`}
-                  onClick={() => setActiveTab('blocks')}
-                >
-                  Block Editor
-                </button>
-                <button
-                  className={`px-3 py-1 rounded-md transition-colors ${
-                    activeTab === 'raw' 
-                      ? 'bg-blue-100 text-blue-700' 
-                      : 'hover:bg-gray-100'
-                  }`}
-                  onClick={() => setActiveTab('raw')}
-                >
-                  Raw JSON
-                </button>
+              
+              <div className="flex items-center space-x-4">
+                {/* Import/Export Actions */}
+                <div className="flex items-center space-x-2">
+                  <button
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 hover:border-purple-300 transition-colors"
+                    onClick={() => document.getElementById("importCdlInput").click()}
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                    </svg>
+                    Import
+                  </button>
+                  <button
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-purple-700 bg-purple-100 border border-purple-300 rounded-lg hover:bg-purple-200 hover:border-purple-400 transition-colors"
+                    onClick={exportCdl}
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    Export
+                  </button>
+                </div>
+
+                {/* View Toggle */}
+                <div className="flex items-center bg-slate-100 rounded-lg p-1">
+                  <button
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-all ${
+                      activeTab === 'blocks' 
+                        ? "bg-white text-slate-900 shadow-sm" 
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                    onClick={() => setActiveTab('blocks')}
+                  >
+                    Block Editor
+                  </button>
+                  <button
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-all ${
+                      activeTab === 'raw' 
+                        ? "bg-white text-slate-900 shadow-sm" 
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                    onClick={() => setActiveTab('raw')}
+                  >
+                    Raw JSON
+                  </button>
+                </div>
               </div>
             </div>
+          </div>
+
+          {/* CONTENT */}
+          <div className="flex-1 overflow-hidden">
+            {activeTab === 'blocks' ? (
+              <div className="h-full overflow-auto">
+                <BlockEditor
+                  key={blockEditorKey}
+                  value={cdlDraft}
+                  onChange={setCdlDraft}
+                  students={studentList}
+                  studentTags={studentTags}
+                  desks={desks}
+                />
+              </div>
+            ) : (
+              <div className="h-full flex flex-col p-6">
+                <div className="flex-1 relative">
+                  <textarea
+                    className="w-full h-full p-4 font-mono text-sm border-2 border-slate-200 rounded-xl bg-slate-50/50 resize-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all"
+                    value={rawValue}
+                    onChange={(e) => setRawValue(e.target.value)}
+                    placeholder="Enter CDL JSON here..."
+                    style={{ fontFamily: 'Menlo, Monaco, "Courier New", monospace' }}
+                  />
+                </div>
+                <div className="flex justify-end mt-4">
+                  <button
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500/20 transition-colors"
+                    onClick={handleRawSave}
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Validate & Save
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-
-        {activeTab === 'blocks' ? (
-          <BlockEditor
-            key={blockEditorKey}
-            value={cdlDraft}
-            onChange={setCdlDraft}
-            students={studentList}
-            studentTags={studentTags}
-            desks={desks}
-          />
-        ) : (
-          <div className="space-y-4">
-            <textarea
-              className="w-full h-[600px] p-4 font-mono text-sm border rounded bg-gray-50 resize-none"
-              value={rawValue}
-              onChange={(e) => setRawValue(e.target.value)}
-              placeholder="Enter CDL JSON here..."
-              style={{ fontFamily: 'Menlo, Monaco, monospace' }}
-            />
-            <div className="flex justify-end">
-              <button
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                onClick={handleRawSave}
-              >
-                Validate & Save
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

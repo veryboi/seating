@@ -401,72 +401,98 @@ function importStudents(file) {
   /*  RENDER                                                                */
   /* --------------------------------------------------------------------- */
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
-      {/* TAB BAR */}
-      <div className="flex">
-        {[
-          { key: "seating", label: "Seating Sandbox" },
-          { key: "constraints", label: "Constraints" },
-          { key: "editor", label: "Layout Editor" },
-        ].map((t) => (
-          <button
-            key={t.key}
-            className={`px-4 py-2 border-b-2 ${tab === t.key ? "border-blue-600 text-blue-600" : "border-transparent"}`}
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
+    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* HEADER */}
+      <div className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Classroom Seating Manager</h1>
+              <p className="text-sm text-slate-600 mt-1">Design layouts, manage students, and optimize seating arrangements</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm font-medium text-slate-700">Ready</span>
+            </div>
+          </div>
+        </div>
+
+        {/* TAB BAR */}
+        <div className="px-6">
+          <nav className="flex space-x-8">
+            {[
+              { key: "seating", label: "Seating Sandbox", icon: "👥" },
+              { key: "constraints", label: "Constraints", icon: "⚙️" },
+              { key: "editor", label: "Layout Editor", icon: "✏️" },
+            ].map((t) => (
+              <button
+                key={t.key}
+                className={`flex items-center space-x-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors ${
+                  tab === t.key 
+                    ? "border-blue-500 text-blue-600 bg-blue-50/50" 
+                    : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
+                }`}
+                onClick={() => setTab(t.key)}
+              >
+                <span className="text-lg">{t.icon}</span>
+                <span>{t.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
 
-      {/* --- SEATING TAB ------------------------------------------------- */}
-      {tab === "seating" && (
-        <SeatingTab
-          studentList={studentList}
-          setStudentList={setStudentList}
-          studentTags={studentTags}
-          setStudentTags={setStudentTags}
-          studentNotes={studentNotes}
-          setStudentNotes={setStudentNotes}
-          customTags={customTags}
-          setCustomTags={setCustomTags}
-          presetTags={presetTags}
-          classroom={classroom}
-          seatMap={seatMap}
-          setSeatMap={setSeatMap}
-          unseated={unseated}
-          setUnseated={setUnseated}
-          noteForChart={noteForChart}
-          setNoteForChart={setNoteForChart}
-          manualCdl={manualCdl}
-          cdlDraft={cdlDraft}
-          setCdlDraft={setCdlDraft}
-          setShowCdlEditor={setShowCdlEditor}
-          setDebug={setDebug}
-          compileNotesToCDL={compileNotesToCDL}
-          buildUserPrompt={buildUserPrompt}
-          runOptimizer={runOptimizer}
-          importStudents={importStudentsUtil}
-          exportStudents={exportStudentsUtil}
-        />
-      )}
+      {/* CONTENT AREA */}
+      <div className="flex-1 overflow-hidden">
+        {/* --- SEATING TAB ------------------------------------------------- */}
+        {tab === "seating" && (
+          <SeatingTab
+            studentList={studentList}
+            setStudentList={setStudentList}
+            studentTags={studentTags}
+            setStudentTags={setStudentTags}
+            studentNotes={studentNotes}
+            setStudentNotes={setStudentNotes}
+            customTags={customTags}
+            setCustomTags={setCustomTags}
+            presetTags={presetTags}
+            classroom={classroom}
+            seatMap={seatMap}
+            setSeatMap={setSeatMap}
+            unseated={unseated}
+            setUnseated={setUnseated}
+            noteForChart={noteForChart}
+            setNoteForChart={setNoteForChart}
+            manualCdl={manualCdl}
+            cdlDraft={cdlDraft}
+            setCdlDraft={setCdlDraft}
+            setShowCdlEditor={setShowCdlEditor}
+            setDebug={setDebug}
+            compileNotesToCDL={compileNotesToCDL}
+            buildUserPrompt={buildUserPrompt}
+            runOptimizer={runOptimizer}
+            importStudents={importStudentsUtil}
+            exportStudents={exportStudentsUtil}
+          />
+        )}
 
-      {/* --- CONSTRAINTS TAB -------------------------------------------- */}
-      {tab === "constraints" && (
-        <ConstraintsTab
-          cdlDraft={cdlDraft}
-          setCdlDraft={setCdlDraft}
-          studentList={studentList}
-        studentTags={studentTags}
-          desks={classroom.desks}
-        />
-      )}
+        {/* --- CONSTRAINTS TAB -------------------------------------------- */}
+        {tab === "constraints" && (
+          <ConstraintsTab
+            cdlDraft={cdlDraft}
+            setCdlDraft={setCdlDraft}
+            studentList={studentList}
+            studentTags={studentTags}
+            desks={classroom.desks}
+          />
+        )}
 
-      {/* --- EDITOR TAB -------------------------------------------------- */}
-      {tab === "editor" && <LayoutEditor classroom={classroom} setClassroom={setClassroom} />}
+        {/* --- EDITOR TAB -------------------------------------------------- */}
+        {tab === "editor" && <LayoutEditor classroom={classroom} setClassroom={setClassroom} />}
+      </div>
 
       {/* DEBUG MODAL */}
-{debug && (
+      {debug && (
         <DebugModal debug={debug} onClose={() => setDebug(null)} />
       )}
     </div>

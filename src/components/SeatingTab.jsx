@@ -124,8 +124,9 @@ function SeatingTab({
   };
 
   return (
-    <div className="flex flex-1 p-4 space-x-4 overflow-hidden">
-      <div className="w-1/3 h-full bg-white p-4 rounded shadow flex flex-col relative">
+    <div className="flex flex-1 h-full bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* LEFT PANEL - Student Management */}
+      <div className="w-96 h-full bg-white border-r border-slate-200 shadow-sm flex flex-col">
         <input
           id="importStudentsInput"
           type="file"
@@ -159,7 +160,21 @@ function SeatingTab({
           }}
         />
 
-        <div className="flex-1 overflow-y-auto my-4 space-y-2">
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-slate-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white text-lg">👥</span>
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Students</h2>
+              <p className="text-sm text-slate-600">Manage your class roster</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Student List */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {studentList.map((s) =>
             selectedStudent === s ? (
               <StudentEditor
@@ -190,13 +205,18 @@ function SeatingTab({
             ) : (
               <button
                 key={s}
-                className="w-full text-left border rounded p-2 hover:bg-blue-100 transition bg-gray-100"
+                className="w-full text-left bg-white border border-slate-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm transition-all duration-200 group"
                 onClick={() => setSelectedStudent(s)}
               >
-                <span className="font-semibold">{s}</span>
-                <div className="flex flex-wrap gap-1 mt-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-slate-900 group-hover:text-blue-600">{s}</span>
+                  <svg className="w-4 h-4 text-slate-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-2">
                   {(studentTags[s] || []).map((tag, i) => (
-                    <span key={i} className="bg-green-300 text-xs px-1 rounded">
+                    <span key={i} className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
                       {tag}
                     </span>
                   ))}
@@ -206,66 +226,77 @@ function SeatingTab({
           )}
         </div>
 
-        <div className="sticky bottom-0 bg-white z-10 pt-4 space-y-4 border-t">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              className="flex-1 border p-2 rounded"
-              placeholder="Enter student name"
-              value={studentInput}
-              onChange={(e) => setStudentInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
+        {/* Footer Actions */}
+        <div className="p-6 bg-slate-50 border-t border-slate-200 space-y-4">
+          {/* Add Student */}
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-slate-700">Add New Student</label>
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                placeholder="Enter student name"
+                value={studentInput}
+                onChange={(e) => setStudentInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const clean = studentInput.trim();
+                    if (clean && !studentList.includes(clean)) {
+                      setStudentList((p) => [...p, clean]);
+                      setStudentInput("");
+                    }
+                  }
+                }}
+              />
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500/20 transition-colors font-medium"
+                onClick={() => {
                   const clean = studentInput.trim();
                   if (clean && !studentList.includes(clean)) {
                     setStudentList((p) => [...p, clean]);
                     setStudentInput("");
                   }
-                }
-              }}
-            />
-            <button
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              onClick={() => {
-                const clean = studentInput.trim();
-                if (clean && !studentList.includes(clean)) {
-                  setStudentList((p) => [...p, clean]);
-                  setStudentInput("");
-                }
-              }}
-            >
-              Add
-            </button>
+                }}
+              >
+                Add
+              </button>
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-sm font-semibold">Chart note</label>
+          {/* Chart Note */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">Chart Instructions</label>
             <textarea
-              className="w-full border rounded p-2 text-sm"
-              rows={2}
-              placeholder="e.g. Keep disruptive students apart"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors text-sm"
+              rows={3}
+              placeholder="e.g. Keep disruptive students apart, group collaborative students together..."
               value={noteForChart}
               onChange={(e) => setNoteForChart(e.target.value)}
             />
           </div>
 
-          <div className="flex items-center justify-between border-t pt-4">
-            <div className="flex items-center gap-2">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300"
-                  checked={debugMode}
-                  onChange={(e) => setDebugMode(e.target.checked)}
-                />
-                <span>Debug Mode</span>
-              </label>
-            </div>
+          {/* Actions */}
+          <div className="space-y-3">
+            {/* Debug Mode */}
+            <label className="flex items-center space-x-2 text-sm">
+              <input
+                type="checkbox"
+                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500/20"
+                checked={debugMode}
+                onChange={(e) => setDebugMode(e.target.checked)}
+              />
+              <span className="text-slate-700">Debug Mode</span>
+            </label>
 
-            <div className="flex gap-2">
+            {/* AI Actions */}
+            <div className="grid grid-cols-2 gap-2">
               <button
-                className={`bg-blue-600 text-white px-3 py-1 rounded flex items-center gap-2 ${isGeneratingCDL ? 'opacity-75 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+                className={`px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                  isGeneratingCDL 
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                }`}
                 onClick={async () => {
                   if (isGeneratingCDL) return;
                   setIsGeneratingCDL(true);
@@ -313,19 +344,18 @@ function SeatingTab({
                 disabled={isGeneratingCDL}
               >
                 {isGeneratingCDL ? (
-                  <>
+                  <div className="flex items-center justify-center">
                     <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    <span>Generating...</span>
-                  </>
+                  </div>
                 ) : (
                   'Generate CDL'
                 )}
               </button>
               <button
-                className="bg-emerald-600 text-white px-3 py-1 rounded"
+                className="px-3 py-2 text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
                 onClick={() => {
                   try {
                     const cdl = JSON.parse(cdlDraft);
@@ -351,75 +381,107 @@ function SeatingTab({
               >
                 Generate Chart
               </button>
-              <div className="border-l mx-2" />
+            </div>
+
+            {/* Import/Export */}
+            <div className="grid grid-cols-2 gap-2">
               <button
-                className="bg-emerald-500 text-white px-3 rounded"
+                className="px-3 py-2 text-sm font-medium bg-slate-50 text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
                 onClick={() => document.getElementById("importStudentsInput").click()}
               >
-                Import
+                Import Students
               </button>
               <button
-                className="bg-emerald-600 text-white px-3 rounded"
+                className="px-3 py-2 text-sm font-medium bg-slate-50 text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
                 onClick={() => exportStudents(studentList, studentTags, studentNotes, customTags)}
               >
-                Export
+                Export Students
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 bg-white p-4 rounded shadow flex flex-col overflow-y-auto">
-        <h2 className="font-bold text-lg text-center mb-2">Seating Sandbox</h2>
-
-        <DndContext collisionDetection={rectIntersection} onDragEnd={handleDragEnd}>
-          <StudentPool students={unseated} studentTags={studentTags} studentNotes={studentNotes} onAddTag={handleAddTag} />
-
-          <div
-            className="relative mt-4 w-full h-[500px] border border-gray-300 rounded bg-slate-50 overflow-scroll"
-            style={{ scrollbarGutter: "stable" }}
-          >
-            <span className="absolute top-2 left-1/2 -translate-x-1/2 text-xs font-semibold pointer-events-none">
-              Front
-            </span>
-            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-semibold pointer-events-none">
-              Back
-            </span>
-            <span className="absolute top-1/2 -translate-y-1/2 left-2 -rotate-90 origin-left text-xs font-semibold pointer-events-none">
-              Left
-            </span>
-            <span className="absolute top-1/2 -translate-y-1/2 right-2 rotate-90 origin-right text-xs font-semibold pointer-events-none">
-              Right
-            </span>
-
-            <div className="relative w-[4000px] h-[4000px]">
-              {classroom.desks.map((desk, i) => (
-                <ViewerDesk
-                  key={i}
-                  desk={desk}
-                  deskIndex={i}
-                  seatMap={seatMap}
-                  studentTags={studentTags}
-                  studentNotes={studentNotes}
-                  onAddTag={handleAddTag}
-                />
-              ))}
+      {/* RIGHT PANEL - Seating Visualization */}
+      <div className="flex-1 bg-white flex flex-col">
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-slate-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
+              <span className="text-white text-lg">🪑</span>
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Seating Chart</h2>
+              <p className="text-sm text-slate-600">Drag and drop to arrange students</p>
             </div>
           </div>
-        </DndContext>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 p-6 overflow-hidden">
+          <DndContext collisionDetection={rectIntersection} onDragEnd={handleDragEnd}>
+            <StudentPool students={unseated} studentTags={studentTags} studentNotes={studentNotes} onAddTag={handleAddTag} />
+
+            <div
+              className="relative mt-6 w-full border-2 border-dashed border-slate-300 rounded-xl bg-gradient-to-br from-slate-50 to-white overflow-auto"
+              style={{ 
+                height: 'calc(100vh - 400px)',
+                maxHeight: '600px',
+                scrollbarGutter: "stable" 
+              }}
+            >
+              {/* Orientation Labels */}
+              <span className="absolute top-4 left-1/2 -translate-x-1/2 text-sm font-medium text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200 z-10">
+                Front of Classroom
+              </span>
+              <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm font-medium text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200 z-10">
+                Back of Classroom
+              </span>
+              <span className="absolute top-1/2 -translate-y-1/2 left-4 -rotate-90 origin-left text-sm font-medium text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200 z-10">
+                Left Wall
+              </span>
+              <span className="absolute top-1/2 -translate-y-1/2 right-4 rotate-90 origin-right text-sm font-medium text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200 z-10">
+                Right Wall
+              </span>
+
+              <div className="relative w-[2000px] h-[1500px] min-w-full min-h-full">
+                {classroom.desks.map((desk, i) => (
+                  <ViewerDesk
+                    key={i}
+                    desk={desk}
+                    deskIndex={i}
+                    seatMap={seatMap}
+                    studentTags={studentTags}
+                    studentNotes={studentNotes}
+                    onAddTag={handleAddTag}
+                  />
+                ))}
+              </div>
+            </div>
+          </DndContext>
+        </div>
       </div>
 
       {/* Success Modal */}
       {showSuccessModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md">
-            <h3 className="text-lg font-semibold mb-2">CDL Generated Successfully!</h3>
-            <p className="text-gray-600 mb-4">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-md mx-4 border border-slate-200">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">CDL Generated Successfully!</h3>
+              </div>
+            </div>
+            <p className="text-slate-600 mb-6">
               Your constraints have been generated. You can view and edit them in the Constraints tab.
             </p>
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end">
               <button
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500/20 transition-colors font-medium"
                 onClick={() => setShowSuccessModal(false)}
               >
                 Got it
