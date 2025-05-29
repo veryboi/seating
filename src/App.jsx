@@ -14,6 +14,15 @@ import {
 import chartData from "../chart_data/chart1.json"; // ◀ default layout (can be replaced via Import)
 import "./App.css";
 import "./index.css";
+import {
+    primeStudentCache,
+    generateChart as runOptimizer,
+  } from "./lib/seat-optimizer";
+import {
+    compileNotesToCDL,
+    buildUserPrompt,          /* NEW – exported in step 4 */
+  } from "./lib/llm.compiler";
+
 
 
 /**********************************************************************
@@ -743,6 +752,8 @@ const [studentTags, setStudentTags] = useState({});
 const [studentNotes, setStudentNotes] = useState({});
 const [customTags, setCustomTags] = useState([]);     // new
 const [noteForChart, setNoteForChart] = useState("");
+/* debug modal payload */
+const [debug, setDebug] = useState(null);   // {prompt:string, cdl:object} | null
 
   // UI
   const [tab, setTab] = useState("seating");
@@ -759,6 +770,20 @@ const presetTags = [
   /* --------------------------------------------------------------------- */
   /*  EFFECTS                                                              */
   /* --------------------------------------------------------------------- */
+
+/* keep optimiser’s student cache in sync */
+useEffect(() => {
+  primeStudentCache(
+    studentList.map((id) => ({
+      id,
+      firstName: id.split(" ")[0],
+      lastName: id.split(" ").slice(1).join(" ") || id,
+      tags: studentTags[id] || [],
+    }))
+  );
+}, [studentList, studentTags]);
+
+
   // when desk layout changes, keep seated students if their seat still exists
   useEffect(() => {
     setSeatMap((prev) => {
@@ -1244,10 +1269,48 @@ const toggleRef = useRef(null);
     <div className="flex gap-2">
       <button
         className="flex-1 bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
-        onClick={() => {
-          console.log("Chart note:", noteForChart);
-          setSeatMap(generateSeatMapFromList(studentList, classroom.desks));
-          setUnseated([]);
+        onClick={async () => {
+          try {
+            /* 0) Build the exact prompt we’ll show the user */
+            const promptText = buildUserPrompt(
+              noteForChart,
+              studentNotes,
+              studentTags,
+              [...presetTags, ...customTags]
+            );
+            console.log(promptText);
+        
+            /* 1) Get CDL from Gemini */
+            const cdl = await compileNotesToCDL(
+              noteForChart,
+              studentNotes,
+              [...presetTags, ...customTags]
+            );
+            console.log(cdl);
+            /* 2) Optimise seating */
+            const seatMapNew = runOptimizer(
+              studentList.map((id) => ({
+                id,
+                firstName: id.split(" ")[0],
+                lastName: id.split(" ").slice(1).join(" ") || id,
+                tags: studentTags[id] || [],
+              })),
+              classroom.desks,
+              cdl
+            );
+        
+            /* 3) Update UI */
+            setSeatMap(seatMapNew);
+            const seated = new Set(Object.values(seatMapNew).filter(Boolean));
+            setUnseated(studentList.filter((s) => !seated.has(s)));
+        
+            /* 4) Open debug modal */
+            setDebug({ prompt: promptText, cdl });
+          } catch (err) {
+            console.log("Could not generate chart:\n" + (err?.message || String(err)));
+            alert("Could not generate chart:\n" + (err?.message || String(err)));
+
+          }
         }}
       >
         Generate Chart
@@ -1321,7 +1384,31 @@ const toggleRef = useRef(null);
       {/* --- EDITOR TAB -------------------------------------------------- */}
       {tab === "editor" && <LayoutEditor classroom={classroom} setClassroom={setClassroom} />}
 
-      
+      {/* DEBUG MODAL */}
+{debug && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[2000]">
+    <div className="bg-white rounded shadow-lg max-w-lg w-[90%] max-h-[85vh] p-4 overflow-auto">
+      <h2 className="font-bold text-lg mb-3">Generation Debug Info</h2>
+
+      <h3 className="font-semibold text-sm mb-1">Prompt sent to LLM</h3>
+      <pre className="text-xs whitespace-pre-wrap bg-gray-100 p-2 rounded mb-4">
+        {debug.prompt}
+      </pre>
+
+      <h3 className="font-semibold text-sm mb-1">CDL returned</h3>
+      <pre className="text-xs whitespace-pre-wrap bg-gray-100 p-2 rounded">
+        {JSON.stringify(debug.cdl, null, 2)}
+      </pre>
+
+      <button
+        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
+        onClick={() => setDebug(null)}
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 }
