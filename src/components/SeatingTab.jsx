@@ -274,6 +274,7 @@ function SeatingTab({
                       noteForChart,
                       studentNotes,
                       studentTags,
+                      classroom.desks,
                       [...presetTags, ...customTags]
                     );
 

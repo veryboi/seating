@@ -49,7 +49,7 @@ const SCHEMA_HINT = `
 CDL keys you may emit
   desks · seats · balanceRules · groups · preferences · ordering
 
-❌  Do NOT copy the classroom layout into “desks” / “seats”.
+❌  Do NOT copy the classroom layout into "desks" / "seats".
     Emit those keys ONLY to pin a student with
       { deskId, forcedStudent }   or   { seatId, forcedStudent }.
 
@@ -192,6 +192,9 @@ function buildUserPrompt(
 
   const layoutBlock = JSON.stringify(layout, null, 2);
 
+  // Calculate typical distances to help LLM understand scale
+  const distances = calculateTypicalDistances(layout);
+
   return `
 STUDENT NOTES
 -------------
@@ -209,6 +212,20 @@ CLASSROOM LAYOUT
     y = 0   → front row
     x = 0   → far left wall
 
+DISTANCE SCALE REFERENCE
+------------------------
+${distances.reference}
+
+IMPORTANT: When specifying clusterSize or minDistance, use these pixel values:
+• Same desk: clusterSize not needed (automatic)
+• Adjacent desks: clusterSize ~${distances.adjacentDesks}
+• Same row, 2 desks apart: clusterSize ~${distances.sameRow}
+• Different rows: clusterSize ~${distances.differentRows}
+
+For "apart" constraints:
+• Different desks: minDistance ~${distances.adjacentDesks}
+• Different rows: minDistance ~${distances.differentRows}
+
 ${layoutBlock}
 
 CHART NOTE
@@ -219,6 +236,83 @@ TAG WHITELIST
 -------------
 ${JSON.stringify(tagList)}
 `.trim();
+}
+
+function calculateTypicalDistances(layout: Desk[]): {
+  reference: string;
+  adjacentDesks: number;
+  sameRow: number;
+  differentRows: number;
+} {
+  // Safety check for undefined or invalid layout
+  if (!layout || !Array.isArray(layout) || layout.length === 0) {
+    console.warn('calculateTypicalDistances: Invalid or empty layout provided:', layout);
+    return {
+      reference: "No desks in layout",
+      adjacentDesks: 150,
+      sameRow: 300,
+      differentRows: 200
+    };
+  }
+
+  // Filter out any desks without valid positions
+  const validDesks = layout.filter(desk => 
+    desk && 
+    desk.position && 
+    Array.isArray(desk.position) && 
+    desk.position.length >= 2 &&
+    typeof desk.position[0] === 'number' &&
+    typeof desk.position[1] === 'number'
+  );
+
+  if (validDesks.length === 0) {
+    console.warn('calculateTypicalDistances: No desks with valid positions found');
+    return {
+      reference: "No valid desk positions found",
+      adjacentDesks: 150,
+      sameRow: 300,
+      differentRows: 200
+    };
+  }
+
+  if (validDesks.length === 1) {
+    return {
+      reference: "Only one desk in layout",
+      adjacentDesks: 100,
+      sameRow: 200,
+      differentRows: 150
+    };
+  }
+
+  // Calculate some typical distances
+  const deskPositions = validDesks.map(desk => desk.position as [number, number]);
+  
+  // Find minimum distances between desk centers
+  let minDistance = Infinity;
+  let maxDistance = 0;
+  
+  for (let i = 0; i < deskPositions.length; i++) {
+    for (let j = i + 1; j < deskPositions.length; j++) {
+      const [x1, y1] = deskPositions[i];
+      const [x2, y2] = deskPositions[j];
+      const distance = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+      
+      if (distance < minDistance) minDistance = distance;
+      if (distance > maxDistance) maxDistance = distance;
+    }
+  }
+
+  // Estimate typical distances based on layout
+  const adjacentDesks = Math.round(minDistance * 0.7); // A bit less than minimum distance
+  const sameRow = Math.round(minDistance * 1.5);       // About 1.5x minimum distance
+  const differentRows = Math.round(minDistance * 1.2); // Between adjacent and same row
+
+  return {
+    reference: `Layout spans ${Math.round(maxDistance)} pixels. Closest desks are ${Math.round(minDistance)} pixels apart.`,
+    adjacentDesks: Math.max(adjacentDesks, 50),
+    sameRow: Math.max(sameRow, 100),
+    differentRows: Math.max(differentRows, 75)
+  };
 }
 
 export { buildUserPrompt };
