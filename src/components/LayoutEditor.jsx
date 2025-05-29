@@ -166,7 +166,7 @@ function LayoutEditor({ classroom, setClassroom }) {
           {/* HEADER */}
           <div className="px-6 py-5 border-b border-slate-200">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
+              {/* <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
                   <span className="text-white text-lg">✏️</span>
                 </div>
@@ -174,7 +174,7 @@ function LayoutEditor({ classroom, setClassroom }) {
                   <h2 className="text-xl font-semibold text-slate-900">Layout Editor</h2>
                   <p className="text-sm text-slate-600 mt-1">Design and customize your classroom layout</p>
                 </div>
-              </div>
+              </div> */}
               
               {/* Import/Export Actions */}
               <div className="flex items-center space-x-2">

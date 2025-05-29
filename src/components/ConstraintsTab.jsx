@@ -166,15 +166,30 @@ function ConstraintsTab({
           {/* CONTENT */}
           <div className="flex-1 overflow-hidden">
             {activeTab === 'blocks' ? (
-              <div className="h-full overflow-auto">
-                <BlockEditor
-                  key={blockEditorKey}
-                  value={cdlDraft}
-                  onChange={setCdlDraft}
-                  students={studentList}
-                  studentTags={studentTags}
-                  desks={desks}
-                />
+              <div className="h-full relative">
+                {/* Scroll indicator */}
+                <div className="absolute top-0 right-0 w-4 h-16 bg-gradient-to-b from-white to-transparent pointer-events-none z-10"></div>
+                <div className="absolute bottom-0 right-0 w-4 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none z-10"></div>
+                
+                <div 
+                  className="h-full px-6 py-4 scrollbar-always-visible" 
+                  style={{ 
+                    overflowY: 'scroll',
+                    scrollbarWidth: 'auto',
+                    scrollbarGutter: 'stable'
+                  }}
+                >
+                  <BlockEditor
+                    key={blockEditorKey}
+                    value={cdlDraft}
+                    onChange={setCdlDraft}
+                    students={studentList}
+                    studentTags={studentTags}
+                    desks={desks}
+                  />
+                  {/* Bottom padding to ensure last content is visible */}
+                  <div className="h-8"></div>
+                </div>
               </div>
             ) : (
               <div className="h-full flex flex-col p-6">
@@ -184,7 +199,10 @@ function ConstraintsTab({
                     value={rawValue}
                     onChange={(e) => setRawValue(e.target.value)}
                     placeholder="Enter CDL JSON here..."
-                    style={{ fontFamily: 'Menlo, Monaco, "Courier New", monospace' }}
+                    style={{ 
+                      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                      scrollbarWidth: 'auto'
+                    }}
                   />
                 </div>
                 <div className="flex justify-end mt-4">
@@ -201,6 +219,29 @@ function ConstraintsTab({
               </div>
             )}
           </div>
+
+          {/* Custom scrollbar styles */}
+          <style jsx>{`
+            .scrollbar-always-visible::-webkit-scrollbar {
+              width: 12px;
+            }
+            .scrollbar-always-visible::-webkit-scrollbar-track {
+              background: #f1f5f9;
+              border-radius: 6px;
+            }
+            .scrollbar-always-visible::-webkit-scrollbar-thumb {
+              background: #cbd5e1;
+              border-radius: 6px;
+              border: 2px solid #f1f5f9;
+            }
+            .scrollbar-always-visible::-webkit-scrollbar-thumb:hover {
+              background: #94a3b8;
+            }
+            .scrollbar-always-visible {
+              scrollbar-width: thin;
+              scrollbar-color: #cbd5e1 #f1f5f9;
+            }
+          `}</style>
         </div>
       </div>
     </div>

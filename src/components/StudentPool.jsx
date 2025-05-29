@@ -7,7 +7,7 @@ function StudentPool({ students, studentTags, studentNotes, onAddTag }) {
 
   return (
     <div className="mb-6">
-      <div className="flex items-center space-x-2 mb-3">
+      {/* <div className="flex items-center space-x-2 mb-3">
         <div className="w-6 h-6 bg-slate-100 rounded-lg flex items-center justify-center">
           <span className="text-slate-600 text-sm">👥</span>
         </div>
@@ -15,15 +15,16 @@ function StudentPool({ students, studentTags, studentNotes, onAddTag }) {
         <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
           {students.length}
         </span>
-      </div>
+      </div> */}
       
       <div
         ref={setNodeRef}
-        className={`min-h-24 w-full p-4 border-2 border-dashed rounded-xl transition-all duration-200 flex flex-wrap gap-3 ${
+        className={`min-h-24 max-h-32 w-full p-4 border-2 border-dashed rounded-xl transition-all duration-200 flex flex-wrap gap-3 overflow-auto ${
           isOver 
             ? "border-emerald-400 bg-emerald-50/50" 
             : "border-slate-300 bg-slate-50/50 hover:border-slate-400"
         }`}
+        style={{ zIndex: 3 }}
       >
         {students.length === 0 ? (
           <div className="w-full flex items-center justify-center py-8">

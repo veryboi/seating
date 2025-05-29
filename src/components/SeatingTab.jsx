@@ -126,7 +126,7 @@ function SeatingTab({
   return (
     <div className="flex flex-1 h-full bg-gradient-to-br from-slate-50 to-slate-100">
       {/* LEFT PANEL - Student Management */}
-      <div className="w-96 h-full bg-white border-r border-slate-200 shadow-sm flex flex-col">
+      <div className="w-80 h-full bg-white border-r border-slate-200 shadow-sm flex flex-col">
         <input
           id="importStudentsInput"
           type="file"
@@ -161,20 +161,10 @@ function SeatingTab({
         />
 
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-200">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-lg">👥</span>
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">Students</h2>
-              <p className="text-sm text-slate-600">Manage your class roster</p>
-            </div>
-          </div>
-        </div>
+        
 
         {/* Student List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {studentList.map((s) =>
             selectedStudent === s ? (
               <StudentEditor
@@ -205,18 +195,18 @@ function SeatingTab({
             ) : (
               <button
                 key={s}
-                className="w-full text-left bg-white border border-slate-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm transition-all duration-200 group"
+                className="w-full text-left bg-white border border-slate-200 rounded-lg p-3 hover:border-blue-300 hover:shadow-sm transition-all duration-200 group"
                 onClick={() => setSelectedStudent(s)}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-slate-900 group-hover:text-blue-600">{s}</span>
-                  <svg className="w-4 h-4 text-slate-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span className="font-medium text-slate-900 group-hover:text-blue-600 text-sm">{s}</span>
+                  <svg className="w-3 h-3 text-slate-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
                   </svg>
                 </div>
-                <div className="flex flex-wrap gap-1 mt-2">
+                <div className="flex flex-wrap gap-1 mt-1">
                   {(studentTags[s] || []).map((tag, i) => (
-                    <span key={i} className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                    <span key={i} className="inline-flex items-center px-1.5 py-0.5 text-xs font-medium bg-green-100 text-green-800 rounded-full">
                       {tag}
                     </span>
                   ))}
@@ -227,14 +217,14 @@ function SeatingTab({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 bg-slate-50 border-t border-slate-200 space-y-4">
+        <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
           {/* Add Student */}
-          <div className="space-y-3">
-            <label className="block text-sm font-medium text-slate-700">Add New Student</label>
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-slate-700">Add New Student</label>
             <div className="flex space-x-2">
               <input
                 type="text"
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                className="flex-1 px-2 py-1.5 text-sm border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
                 placeholder="Enter student name"
                 value={studentInput}
                 onChange={(e) => setStudentInput(e.target.value)}
@@ -250,7 +240,7 @@ function SeatingTab({
                 }}
               />
               <button
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500/20 transition-colors font-medium"
+                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500/20 transition-colors font-medium"
                 onClick={() => {
                   const clean = studentInput.trim();
                   if (clean && !studentList.includes(clean)) {
@@ -265,24 +255,24 @@ function SeatingTab({
           </div>
 
           {/* Chart Note */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Chart Instructions</label>
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-slate-700">Chart Instructions</label>
             <textarea
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors text-sm"
-              rows={3}
-              placeholder="e.g. Keep disruptive students apart, group collaborative students together..."
+              className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+              rows={2}
+              placeholder="e.g. Keep disruptive students apart..."
               value={noteForChart}
               onChange={(e) => setNoteForChart(e.target.value)}
             />
           </div>
 
           {/* Actions */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {/* Debug Mode */}
-            <label className="flex items-center space-x-2 text-sm">
+            <label className="flex items-center space-x-2 text-xs">
               <input
                 type="checkbox"
-                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500/20"
+                className="w-3 h-3 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500/20"
                 checked={debugMode}
                 onChange={(e) => setDebugMode(e.target.checked)}
               />
@@ -290,9 +280,9 @@ function SeatingTab({
             </label>
 
             {/* AI Actions */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1">
               <button
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${
                   isGeneratingCDL 
                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
                     : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
@@ -345,7 +335,7 @@ function SeatingTab({
               >
                 {isGeneratingCDL ? (
                   <div className="flex items-center justify-center">
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
@@ -355,7 +345,7 @@ function SeatingTab({
                 )}
               </button>
               <button
-                className="px-3 py-2 text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                className="px-2 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
                 onClick={() => {
                   try {
                     const cdl = JSON.parse(cdlDraft);
@@ -384,15 +374,15 @@ function SeatingTab({
             </div>
 
             {/* Import/Export */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1">
               <button
-                className="px-3 py-2 text-sm font-medium bg-slate-50 text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+                className="px-2 py-1.5 text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
                 onClick={() => document.getElementById("importStudentsInput").click()}
               >
                 Import Students
               </button>
               <button
-                className="px-3 py-2 text-sm font-medium bg-slate-50 text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+                className="px-2 py-1.5 text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
                 onClick={() => exportStudents(studentList, studentTags, studentNotes, customTags)}
               >
                 Export Students
@@ -404,47 +394,39 @@ function SeatingTab({
 
       {/* RIGHT PANEL - Seating Visualization */}
       <div className="flex-1 bg-white flex flex-col">
-        {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-200">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-lg">🪑</span>
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">Seating Chart</h2>
-              <p className="text-sm text-slate-600">Drag and drop to arrange students</p>
-            </div>
-          </div>
-        </div>
+        
 
         {/* Content */}
-        <div className="flex-1 p-6 overflow-hidden">
-          <DndContext collisionDetection={rectIntersection} onDragEnd={handleDragEnd}>
+        <div className="flex-1 p-4 overflow-hidden" style={{ position: 'relative', zIndex: 0 }}>
+          <DndContext 
+            collisionDetection={rectIntersection} 
+            onDragEnd={handleDragEnd}
+          >
             <StudentPool students={unseated} studentTags={studentTags} studentNotes={studentNotes} onAddTag={handleAddTag} />
 
             <div
-              className="relative mt-6 w-full border-2 border-dashed border-slate-300 rounded-xl bg-gradient-to-br from-slate-50 to-white overflow-auto"
+              className="relative mt-3 w-full border-2 border-dashed border-slate-300 rounded-xl bg-gradient-to-br from-slate-50 to-white overflow-auto"
               style={{ 
-                height: 'calc(100vh - 400px)',
-                maxHeight: '600px',
-                scrollbarGutter: "stable" 
+                height: '400px',
+                scrollbarGutter: "stable",
+                zIndex: 1
               }}
             >
               {/* Orientation Labels */}
-              <span className="absolute top-4 left-1/2 -translate-x-1/2 text-sm font-medium text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200 z-10">
+              <span className="absolute top-2 left-1/2 -translate-x-1/2 text-xs font-medium text-slate-500 bg-white px-2 py-1 rounded-full border border-slate-200" style={{ zIndex: 5 }}>
                 Front of Classroom
               </span>
-              <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm font-medium text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200 z-10">
+              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-medium text-slate-500 bg-white px-2 py-1 rounded-full border border-slate-200" style={{ zIndex: 5 }}>
                 Back of Classroom
               </span>
-              <span className="absolute top-1/2 -translate-y-1/2 left-4 -rotate-90 origin-left text-sm font-medium text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200 z-10">
+              <span className="absolute top-1/2 -translate-y-1/2 left-2 -rotate-90 origin-left text-xs font-medium text-slate-500 bg-white px-2 py-1 rounded-full border border-slate-200" style={{ zIndex: 5 }}>
                 Left Wall
               </span>
-              <span className="absolute top-1/2 -translate-y-1/2 right-4 rotate-90 origin-right text-sm font-medium text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200 z-10">
+              <span className="absolute top-1/2 -translate-y-1/2 right-2 rotate-90 origin-right text-xs font-medium text-slate-500 bg-white px-2 py-1 rounded-full border border-slate-200" style={{ zIndex: 5 }}>
                 Right Wall
               </span>
 
-              <div className="relative w-[2000px] h-[1500px] min-w-full min-h-full">
+              <div className="relative" style={{ width: '1000px', height: '600px', zIndex: 2 }}>
                 {classroom.desks.map((desk, i) => (
                   <ViewerDesk
                     key={i}
