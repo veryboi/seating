@@ -1,7 +1,7 @@
 // src/App.js – seating sandbox **plus** a visual "Layout Editor" tab (with JSON import)
 // Drag-and-drop desks in the editor, select them reliably, and download / import layouts.
 // ─────────────────────────────────────────────────────────────────────
-
+import ReactDOM from "react-dom";
 import React, { useState, useEffect, useRef } from "react";
 import {
   DndContext,
@@ -15,10 +15,11 @@ import chartData from "../chart_data/chart1.json"; // ◀ default layout (can be
 import "./App.css";
 import "./index.css";
 
+
 /**********************************************************************
  *  DRAGGABLE STUDENT CARD
  *********************************************************************/
-function DraggableStudent({ id, tags = [], onAddTag, compact = false }) {
+function DraggableStudent({ id, tags = [], note = "", onAddTag, compact = false }) {
   const {
     attributes,
     listeners,
@@ -35,48 +36,56 @@ function DraggableStudent({ id, tags = [], onAddTag, compact = false }) {
     zIndex: isDragging ? 1000 : 50,
   };
 
-  const [tagInput, setTagInput] = React.useState("");
-  /* selected student + optional note */
+  const [showTip, setShowTip] = React.useState(false);
+const [tipPos, setTipPos]   = React.useState({ left: 0, top: 0 });
+const cardRef = React.useRef(null);
+
+const openTip = () => {
+  if (cardRef.current) {
+    const rect = cardRef.current.getBoundingClientRect();
+    setTipPos({ left: rect.right + 6, top: rect.top });
+    setShowTip(true);
+  }
+};
+const closeTip = () => setShowTip(false);
 
 
 
 
   return (
     <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      className={`relative ${small ? "w-12 h-12 text-xs" : "w-20 h-20"} bg-blue-500 text-white flex flex-col items-center justify-center rounded shadow select-none p-1`}
-      style={style}
-    >
+  ref={(el) => {
+    setNodeRef(el);
+    cardRef.current = el;
+  }}
+  {...listeners}
+  {...attributes}
+  onMouseEnter={openTip}
+  onMouseLeave={closeTip}
+  className={`relative ${small ? "w-12 h-12 text-xs" : "w-20 h-20"} bg-blue-500 text-white flex flex-col items-center justify-center rounded shadow select-none p-1`}
+  style={style}
+>
       <div>{id}</div>
-      {!small && (<div className="flex flex-wrap gap-1 mt-1">
-        {tags.map((tag, i) => (
-          <span key={i} className="bg-green-300 text-xs px-1 rounded">
-            {tag}
-          </span>
-        ))}
-      </div>)}
-
-      {onAddTag &&!small&& (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (tagInput.trim()) {
-              onAddTag(id, tagInput.trim());
-              setTagInput("");
-            }
-          }}
-          className="mt-1"
-        >
-          <input
-            className="text-xs text-black rounded px-1 w-14"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            placeholder="+tag"
-          />
-        </form>
-      )}
+      
+      {showTip && !isDragging &&
+  ReactDOM.createPortal(
+    <div
+      style={{
+        position: "fixed",
+        left: tipPos.left,
+        top: tipPos.top,
+        maxWidth: 220,
+      }}
+      className="bg-white text-black text-xs border rounded shadow z-[10000] p-2"
+      onMouseEnter={openTip}  /* keep open if cursor moves onto tooltip */
+      onMouseLeave={closeTip}
+    >
+      <div className="font-bold">{id}</div>
+      {tags.length > 0 && <div className="mt-1">Tags: {tags.join(", ")}</div>}
+      {note && <div className="mt-1 italic break-words">{note}</div>}
+    </div>,
+    document.body
+  )}
     </div>
   );
 }
@@ -84,7 +93,7 @@ function DraggableStudent({ id, tags = [], onAddTag, compact = false }) {
 /**********************************************************************
  *  SEAT (droppable)
  *********************************************************************/
-function Seat({ id, occupant, tags, onAddTag, style }) {
+function Seat({ id, occupant, tags, studentNotes, onAddTag, style }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const borderColor = isOver ? "border-green-500" : "border-gray-300";
 
@@ -95,10 +104,16 @@ function Seat({ id, occupant, tags, onAddTag, style }) {
       style={style}
     >
       {occupant ? (
-        <DraggableStudent id={occupant} tags={tags} onAddTag={onAddTag} compact />
-      ) : (
-        "Seat"
-      )}
+    <DraggableStudent
+      id={occupant}
+      tags={tags}
+      note={studentNotes[occupant] || ""}
+      onAddTag={onAddTag}
+      compact
+    />
+  ) : (
+    "Seat"
+  )}
     </div>
   );
 }
@@ -106,7 +121,7 @@ function Seat({ id, occupant, tags, onAddTag, style }) {
 /**********************************************************************
  *  STUDENT POOL
  *********************************************************************/
-function StudentPool({ students, studentTags, onAddTag }) {
+function StudentPool({ students, studentTags, studentNotes, onAddTag }) {
   const { setNodeRef, isOver } = useDroppable({ id: "pool" });
 
   return (
@@ -120,13 +135,14 @@ function StudentPool({ students, studentTags, onAddTag }) {
         <span className="text-gray-400">Drag students here to unseat</span>
       )}
       {students.map((s) => (
-        <DraggableStudent
-          key={s}
-          id={s}
-          tags={studentTags[s] || []}
-          onAddTag={onAddTag}
-        />
-      ))}
+    <DraggableStudent
+      key={s}
+      id={s}
+      tags={studentTags[s] || []}
+      note={studentNotes[s] || ""}
+      onAddTag={onAddTag}
+    />
+  ))}
     </div>
   );
 }
@@ -183,7 +199,7 @@ function DeskShape({ shape }) {
 /**********************************************************************
  *  DESK (viewer)
  *********************************************************************/
-function ViewerDesk({ desk, deskIndex, seatMap, studentTags, onAddTag }) {
+function ViewerDesk({ desk, deskIndex, seatMap, studentTags, studentNotes, onAddTag }) {
   return (
     <div
       className="absolute"
@@ -199,6 +215,7 @@ function ViewerDesk({ desk, deskIndex, seatMap, studentTags, onAddTag }) {
             id={seatId}
             occupant={occupant}
             tags={occupant ? studentTags[occupant] || [] : []}
+            studentNotes={studentNotes} 
             onAddTag={onAddTag}
             style={{
               position: "absolute",
@@ -215,10 +232,24 @@ function ViewerDesk({ desk, deskIndex, seatMap, studentTags, onAddTag }) {
 /**********************************************************************
  *  EDIT-MODE SEAT (draggable inside a desk)
  *********************************************************************/
-function EditorSeat({ deskIndex, seatIndex, pos, onPositionChange }) {
-  const { setNodeRef, listeners, attributes, transform, isDragging } =
-    useDraggable({ id: `desk-${deskIndex}/seat-${seatIndex}` });
+function EditorSeat({
+  deskIndex,
+  seatIndex,
+  pos,
+  onPositionChange,
+  isSelected,
+  onSeatSelect,
+}) {
+  /* dnd-kit handle */
+  const {
+    setNodeRef,
+    attributes,
+    listeners,
+    transform,
+    isDragging,
+  } = useDraggable({ id: `desk-${deskIndex}/seat-${seatIndex}` });
 
+  /* style */
   const style = {
     position: "absolute",
     left: pos[0] + (transform ? transform.x : 0),
@@ -228,20 +259,34 @@ function EditorSeat({ deskIndex, seatIndex, pos, onPositionChange }) {
     width: 20,
     height: 20,
     borderRadius: 4,
-    background: "#f97316", // orange-400
-    border: "2px solid #4b5563", // gray-600
+    background: "#f97316",
+    border: `2px solid ${isSelected ? "#ef4444" : "#4b5563"}`,
     cursor: "move",
+  };
+
+  /* merge our own pointer-down with dnd-kit’s */
+  const handlePointerDown = (e) => {
+    e.stopPropagation();          // don’t let the desk grab focus
+    onSeatSelect();               // persist selection
+    if (listeners.onPointerDown) {
+      listeners.onPointerDown(e);  // still start the drag
+    }
   };
 
   return (
     <div
       ref={setNodeRef}
-      {...listeners}
       {...attributes}
+      {...listeners}
+      onPointerDown={handlePointerDown}
+      onClick={(e) => e.stopPropagation()}   // block desk click after drag
       style={style}
       onPointerUp={() => {
         if (transform) {
-          onPositionChange(seatIndex, [pos[0] + transform.x, pos[1] + transform.y]);
+          onPositionChange(seatIndex, [
+            pos[0] + transform.x,
+            pos[1] + transform.y,
+          ]);
         }
       }}
       title={`Seat ${seatIndex + 1}`}
@@ -256,9 +301,11 @@ function DraggableDesk({
   desk,
   index,
   isSelected,
+  selectedSeat,
   onSelect,
   onPositionChange,
   onSeatPositionChange,
+  onSeatSelect,
 }) {
   const { setNodeRef, listeners, attributes, transform, isDragging } = useDraggable({ id: `desk-${index}` });
 
@@ -297,14 +344,18 @@ function DraggableDesk({
 
       {/* Seats inside this desk */}
       {desk.seats.map((seatPos, sIdx) => (
-        <EditorSeat
-          key={sIdx}
-          deskIndex={index}
-          seatIndex={sIdx}
-          pos={seatPos}
-          onPositionChange={(seatIdx, newPos) => onSeatPositionChange(index, seatIdx, newPos)}
-        />
-      ))}
+    <EditorSeat
+      key={sIdx}
+      deskIndex={index}
+      seatIndex={sIdx}
+      pos={seatPos}
+      isSelected={isSelected && selectedSeat === sIdx}
+      onPositionChange={(seatIdx, newPos) =>
+        onSeatPositionChange(index, seatIdx, newPos)
+      }
+      onSeatSelect={() => onSeatSelect(index, sIdx)}
+    />
+  ))}
     </div>
   );
 }
@@ -350,7 +401,12 @@ function LayoutEditor({ classroom, setClassroom }) {
   /* Local copy of desks so we can stage edits */
   const [desks, setDesks] = useState(() => JSON.parse(JSON.stringify(classroom.desks)));
   const [selectedDesk, setSelectedDesk] = useState(null);
+  const [selectedSeat, setSelectedSeat] = useState(null);      // NEW
   const fileInputRef = useRef(null);
+  const handleSeatSelect = (deskIdx, seatIdx) => {
+    setSelectedDesk(deskIdx);
+    setSelectedSeat(seatIdx);
+  };
 
   /* Propagate changes to parent */
   useEffect(() => {
@@ -502,6 +558,40 @@ function LayoutEditor({ classroom, setClassroom }) {
           + Seat
         </button>
 
+        <button
+  className={`bg-red-500 text-white px-3 py-2 rounded ${
+    selectedSeat == null ? "opacity-50 cursor-not-allowed" : ""
+  }`}
+  disabled={selectedSeat == null}
+  onClick={() => {
+    if (selectedDesk == null || selectedSeat == null) return;
+    setDesks((prev) => {
+      const next = [...prev];
+      const seats = [...next[selectedDesk].seats];
+      seats.splice(selectedSeat, 1);
+      next[selectedDesk] = { ...next[selectedDesk], seats };
+      return next;
+    });
+    setSelectedSeat(null);
+  }}
+>
+  Delete Seat
+</button>
+
+<button
+  className={`bg-red-600 text-white px-3 py-2 rounded ${
+    selectedDesk == null ? "opacity-50 cursor-not-allowed" : ""
+  }`}
+  disabled={selectedDesk == null}
+  onClick={() => {
+    setDesks((prev) => prev.filter((_, i) => i !== selectedDesk));
+    setSelectedDesk(null);
+    setSelectedSeat(null);
+  }}
+>
+  Delete Desk
+</button>
+
         {/* Import & Download */}
         <input
           ref={fileInputRef}
@@ -544,14 +634,19 @@ function LayoutEditor({ classroom, setClassroom }) {
   >
     {desks.map((desk, i) => (
       <DraggableDesk
-        key={i}
-        desk={desk}
-        index={i}
-        isSelected={selectedDesk === i}
-        onSelect={setSelectedDesk}
-        onPositionChange={handleDeskPositionChange}
-        onSeatPositionChange={handleSeatPositionChange}
-      />
+      key={i}
+      desk={desk}
+      index={i}
+      isSelected={selectedDesk === i}
+      selectedSeat={selectedSeat}
+      onSelect={(idx) => {
+        setSelectedDesk(idx);
+        setSelectedSeat(null);
+      }}
+      onPositionChange={handleDeskPositionChange}
+      onSeatPositionChange={handleSeatPositionChange}
+      onSeatSelect={handleSeatSelect}
+    />
     ))}
   </div>
 </DndContext>
@@ -751,31 +846,77 @@ function importStudents(file) {
   /* --------------------------------------------------------------------- */
   const handleDragEnd = ({ active, over }) => {
     if (!over) return;
-
-    const studentId = active.id;
-    let destId = over.id;
-
-    // dropped into the pool – id("pool") handled by StudentPool
-    if (destId === "pool") {
-      const oldSeat = findSeatOfStudent(seatMap, studentId);
-      if (oldSeat) setSeatMap((m) => ({ ...m, [oldSeat]: null }));
-      setUnseated((prev) => (prev.includes(studentId) ? prev : [...prev, studentId]));
+  
+    const studentA = active.id;           // the one we dragged
+    const targetId = over.id;             // seat-id, pool, or other student
+  
+    /** helper: recompute the pool from a seatMap */
+    const recalcUnseated = (nextSeatMap) => {
+      const seated = new Set(Object.values(nextSeatMap).filter(Boolean));
+      return studentList.filter((s) => !seated.has(s));
+    };
+  
+    /** -------- 1. Dropped in the pool → unseat -------- */
+    if (targetId === "pool") {
+      const oldSeat = findSeatOfStudent(seatMap, studentA);
+      if (!oldSeat) return;               // already un-seated
+  
+      const next = { ...seatMap, [oldSeat]: null };
+      setSeatMap(next);
+      setUnseated(recalcUnseated(next));
       return;
     }
-
-    // dropped on a seat
-    if (!seatMap.hasOwnProperty(destId)) return;
-    if (seatMap[destId] === studentId) return;
-    if (seatMap[destId]) return; // seat taken – no swap logic
-
-    const oldSeat = findSeatOfStudent(seatMap, studentId);
-    setSeatMap((m) => {
-      const next = { ...m };
+  
+    /** -------- 2. Dropped on another student tile -------- */
+    if (studentList.includes(targetId)) {
+      const studentB = targetId;
+      if (studentA === studentB) return;
+  
+      const seatA = findSeatOfStudent(seatMap, studentA);
+      const seatB = findSeatOfStudent(seatMap, studentB);
+      if (!seatB) return;                 // target student is in pool → ignore
+  
+      const next = { ...seatMap };
+      if (seatA) next[seatA] = studentB;
+      else next[seatB] = null;            // studentB will become un-seated
+      next[seatB] = studentA;
+  
+      setSeatMap(next);
+      setUnseated(recalcUnseated(next));
+      return;
+    }
+  
+    /** -------- 3. Dropped on a seat -------- */
+    if (!seatMap.hasOwnProperty(targetId)) return;
+  
+    const occupant = seatMap[targetId];
+  
+    /* 3a: seat empty → simple move */
+    if (!occupant) {
+      const oldSeat = findSeatOfStudent(seatMap, studentA);
+      const next = { ...seatMap };
       if (oldSeat) next[oldSeat] = null;
-      next[destId] = studentId;
-      return next;
-    });
-    setUnseated((prev) => prev.filter((s) => s !== studentId));
+      next[targetId] = studentA;
+  
+      setSeatMap(next);
+      setUnseated(recalcUnseated(next));
+      return;
+    }
+  
+    /* 3b: seat occupied → swap A & B */
+    const studentB = occupant;
+    const seatA = findSeatOfStudent(seatMap, studentA); // may be null
+    const next = { ...seatMap };
+    next[targetId] = studentA;
+    if (seatA) next[seatA] = studentB;
+    else {
+      // studentA came from pool, so studentB now becomes un-seated
+      next[targetId] = studentA;
+      // leave seatA null (it doesn't exist), studentB ends up in pool
+    }
+  
+    setSeatMap(next);
+    setUnseated(recalcUnseated(next));
   };
 
   /* --------------------------------------------------------------------- */
@@ -791,6 +932,7 @@ function importStudents(file) {
     onRemoveTag,
     onUpdateNote,
     onDelete,
+    onCollapse
   }) {
     if (!student) {
       return (
@@ -801,20 +943,30 @@ function importStudents(file) {
     }
   
     const [tagInput, setTagInput] = useState("");
-  
+  const [localNote, setLocalNote] = useState(note || "");
+  const [openTags, setOpenTags] = useState(false);
+const [dropdownPos, setDropdownPos] = useState({ left: 0, top: 0, width: 0 });
+const toggleRef = useRef(null);
     return (
       <div className="border rounded p-3 space-y-3 bg-gray-50">
         {/* header + delete */}
-        <div className="flex justify-between items-center">
-          <h3 className="font-bold">{student}</h3>
-          <button
-            className="text-red-600 text-sm"
-            onClick={() => onDelete(student)}
-            title="Remove student"
-          >
-            ✕
-          </button>
-        </div>
+        <div
+  className="flex justify-between items-start cursor-pointer select-none"
+  onClick={onCollapse}
+>
+  <h3 className="font-bold text-lg">{student}</h3>
+
+  {/* Delete button – stop the collapse click */}
+  <button
+    className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 rounded"
+    onClick={(e) => {
+      e.stopPropagation();           // don’t collapse first
+      onDelete(student);
+    }}
+  >
+    Delete
+  </button>
+</div>
   
         {/* existing tags */}
         <div className="flex flex-wrap gap-1">
@@ -835,56 +987,95 @@ function importStudents(file) {
         </div>
   
         {/* preset & custom tags */}
-        <details className="w-full">
-          <summary className="cursor-pointer text-sm border rounded px-2 py-1 text-gray-600">
-            + Tag
-          </summary>
-          <div className="mt-2 space-y-1">
-            {allTags.map((t) => (
-              <button
-                key={t}
-                className="block w-full text-left px-2 py-1 hover:bg-gray-200 rounded disabled:text-gray-400"
-                disabled={tags.includes(t)}
-                onClick={() => onAddTag(student, t)}
-              >
-                {t}
-              </button>
-            ))}
-  
-            {/* custom tag entry */}
-            <form
-              className="flex gap-1 pt-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const clean = tagInput.trim();
-                if (!clean) return;
-                onAddTag(student, clean);
-                setTagInput("");
-              }}
-            >
-              <input
-                className="flex-1 border px-1 text-xs rounded"
-                placeholder="Custom tag"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-              />
-              <button className="text-xs bg-blue-500 text-white px-2 rounded">
-                Add
-              </button>
-            </form>
-          </div>
-        </details>
+        {/* TAG PICKER */}
+<div className="relative">
+  {/* toggle button */}
+  <button
+    ref={toggleRef}
+    type="button"
+    className="w-full text-sm border rounded px-2 py-1 text-gray-600 bg-white hover:bg-gray-100"
+    onClick={() => {
+      if (!openTags && toggleRef.current) {
+        const r = toggleRef.current.getBoundingClientRect();
+        setDropdownPos({ left: r.left, top: r.bottom, width: r.width });
+      }
+      setOpenTags(!openTags);
+    }}
+  >
+    + Tag
+  </button>
+</div>
+
+{/* floating dropdown rendered in a portal */}
+{openTags &&
+  ReactDOM.createPortal(
+    <div
+      style={{
+        position: "fixed",
+        left: dropdownPos.left,
+        top: dropdownPos.top,
+        width: dropdownPos.width,
+        maxHeight: "160px",
+      }}
+      className="overflow-y-auto bg-white border rounded shadow z-[1000]"
+      onMouseLeave={() => setOpenTags(false)}
+      onWheel={(e) => e.stopPropagation()}   /* prevent parent scroll */
+    >
+      {allTags.map((t) => (
+        <button
+          key={t}
+          className={`block w-full text-left px-2 py-1 text-xs ${
+            tags.includes(t)
+              ? "text-gray-400 cursor-not-allowed"
+              : "hover:bg-gray-200"
+          }`}
+          disabled={tags.includes(t)}
+          onClick={() => {
+            onAddTag(student, t);
+            setOpenTags(false);
+          }}
+        >
+          {t}
+        </button>
+      ))}
+
+      {/* custom tag entry */}
+      <form
+        className="flex gap-1 p-2 border-t"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const clean = tagInput.trim();
+          if (!clean) return;
+          onAddTag(student, clean);
+          setTagInput("");
+          setOpenTags(false);
+        }}
+      >
+        <input
+          className="flex-1 border px-1 text-xs rounded"
+          placeholder="Custom tag"
+          value={tagInput}
+          onChange={(e) => setTagInput(e.target.value)}
+        />
+        <button className="text-xs bg-blue-500 text-white px-2 rounded">
+          Add
+        </button>
+      </form>
+    </div>,
+    document.body
+  )}
   
         {/* individual note */}
         <div className="space-y-1">
           <label className="text-xs font-medium">Note</label>
           <textarea
-            className="w-full border rounded p-1 text-xs"
-            rows={2}
-            placeholder="Notes about this student"
-            value={note || ""}
-            onChange={(e) => onUpdateNote(student, e.target.value)}
-          />
+  className="w-full border rounded p-1 text-xs"
+  rows={2}
+  placeholder="Notes about this student"
+  value={localNote}
+  onChange={(e) => setLocalNote(e.target.value)}
+  onBlur={() => onUpdateNote(student, localNote)}
+/>
         </div>
       </div>
     );
@@ -948,40 +1139,44 @@ function importStudents(file) {
     }}
   />
 
-  {/* ───── sticky TOP: Student editor ───── */}
-  {/* ───── sticky TOP: Student editor ───── */}
-<div className="sticky top-0 bg-white z-10">
-  {/* fixed height + internal scroll */}
-  <div className="h-64 overflow-y-auto p-4">
-    <StudentEditor
-      student={selectedStudent}
-      tags={selectedStudent ? studentTags[selectedStudent] || [] : []}
-      note={selectedStudent ? studentNotes[selectedStudent] : ""}
-      allTags={[...presetTags, ...customTags]}
-      onAddTag={handleAddTag}
-      onRemoveTag={handleRemoveTag}
-      onUpdateNote={handleUpdateNote}
-      onDelete={(name) => {
-        setStudentList((p) => p.filter((s) => s !== name));
-        setStudentTags((p) => { const n = {...p}; delete n[name]; return n; });
-        setStudentNotes((p) => { const n = {...p}; delete n[name]; return n; });
-        setSelectedStudent(null);
-      }}
-    />
-  </div>
-  {/* divider */}
-  <div className="border-b" />
-</div>
+  
 
 
-  {/* ───── scrollable MIDDLE: roster ───── */}
-  <div className="flex-1 overflow-y-auto my-4">
-    {studentList.map((s) => (
+  {/* ── ROSTER: collapsible rows ── */}
+<div className="flex-1 overflow-y-auto my-4 space-y-2">
+  {studentList.map((s) =>
+    selectedStudent === s ? (
+      /* expanded editor card */
+      <StudentEditor
+        key={s}
+        student={s}
+        tags={studentTags[s] || []}
+        note={studentNotes[s] || ""}
+        allTags={[...presetTags, ...customTags]}
+        onAddTag={handleAddTag}
+        onRemoveTag={handleRemoveTag}
+        onUpdateNote={handleUpdateNote}
+        onDelete={(name) => {
+          setStudentList((p) => p.filter((x) => x !== name));
+          setStudentTags((p) => {
+            const n = { ...p };
+            delete n[name];
+            return n;
+          });
+          setStudentNotes((p) => {
+            const n = { ...p };
+            delete n[name];
+            return n;
+          });
+          setSelectedStudent(null);
+        }}
+        onCollapse={() => setSelectedStudent(null)}
+      />
+    ) : (
+      /* collapsed one-line button */
       <button
         key={s}
-        className={`w-full text-left border rounded p-2 mb-1 hover:bg-blue-100 transition ${
-          selectedStudent === s ? "bg-blue-50" : "bg-gray-100"
-        }`}
+        className="w-full text-left border rounded p-2 hover:bg-blue-100 transition bg-gray-100"
         onClick={() => setSelectedStudent(s)}
       >
         <span className="font-semibold">{s}</span>
@@ -993,8 +1188,9 @@ function importStudents(file) {
           ))}
         </div>
       </button>
-    ))}
-  </div>
+    )
+  )}
+</div>
 
   {/* ───── sticky BOTTOM: add / note / actions ───── */}
   <div className="sticky bottom-0 bg-white z-10 pt-4 space-y-4 border-t">
@@ -1079,21 +1275,44 @@ function importStudents(file) {
 
             <DndContext collisionDetection={rectIntersection} onDragEnd={handleDragEnd}>
               {/* UN-SEATED BANK – always visible so you can drop here */}
-              <StudentPool students={unseated} studentTags={studentTags} onAddTag={handleAddTag} />
+              <StudentPool students={unseated} studentTags={studentTags} studentNotes={studentNotes} onAddTag={handleAddTag} />
 
               {/* DESK LAYOUT */}
-              <div className="relative mt-4 w-full h-[500px] border border-gray-300 rounded bg-slate-50 overflow-hidden">
-                {classroom.desks.map((desk, i) => (
-                  <ViewerDesk
-                    key={i}
-                    desk={desk}
-                    deskIndex={i}
-                    seatMap={seatMap}
-                    studentTags={studentTags}
-                    onAddTag={handleAddTag}
-                  />
-                ))}
-              </div>
+ {/* DESK LAYOUT / SCROLLABLE MAP */}
+<div
+  /* outer frame: fixed height, both scrollbars always visible */
+  className="relative mt-4 w-full h-[500px] border border-gray-300 rounded bg-slate-50 overflow-scroll"
+  style={{ scrollbarGutter: "stable" }}   /* keeps layout when bars appear */
+>
+  {/* floating room-orientation labels */}
+  <span className="absolute top-2 left-1/2 -translate-x-1/2 text-xs font-semibold pointer-events-none">
+    Front
+  </span>
+  <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-semibold pointer-events-none">
+    Back
+  </span>
+  <span className="absolute top-1/2 -translate-y-1/2 left-2 -rotate-90 origin-left text-xs font-semibold pointer-events-none">
+    Left
+  </span>
+  <span className="absolute top-1/2 -translate-y-1/2 right-2 rotate-90 origin-right text-xs font-semibold pointer-events-none">
+    Right
+  </span>
+
+  {/* huge inner canvas → “infinite” panning room (4 000 × 4 000 px) */}
+  <div className="relative w-[4000px] h-[4000px]">
+    {classroom.desks.map((desk, i) => (
+      <ViewerDesk
+        key={i}
+        desk={desk}
+        deskIndex={i}
+        seatMap={seatMap}
+        studentTags={studentTags}
+        studentNotes={studentNotes}
+        onAddTag={handleAddTag}
+      />
+    ))}
+  </div>
+</div>
             </DndContext>
           </div>
         </div>
