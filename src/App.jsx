@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   DndContext,
   pointerWithin,
-  rectIntersection,
+  rectIntersection, 
   useDraggable,
   useDroppable,
 } from "@dnd-kit/core";
@@ -15,13 +15,13 @@ import chartData from "../chart_data/chart1.json"; // ◀ default layout (can be
 import "./App.css";
 import "./index.css";
 import {
-  primeStudentCache,
-  generateChart as runOptimizer,
-} from "./lib/seat-optimizer";
+    primeStudentCache,
+    generateChart as runOptimizer,
+  } from "./lib/seat-optimizer";
 import {
-  compileNotesToCDL,
-  buildUserPrompt,          /* NEW – exported in step 4 */
-} from "./lib/llm.compiler";
+    compileNotesToCDL,
+    buildUserPrompt,          /* NEW – exported in step 4 */
+  } from "./lib/llm.compiler";
 
 // Import components
 import DraggableStudent from "./components/DraggableStudent";
@@ -138,43 +138,43 @@ function DraggableDesk({
 
   return (
     <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      className={`absolute cursor-move ${borderStyle}`}
-      style={style}
+    ref={setNodeRef}
+    {...listeners}
+    {...attributes}
+    className={`absolute cursor-move ${borderStyle}`}
+    style={style}
       /* click once to select; the click won't bubble up and clear selection */
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect(index);
-      }}
-      onPointerUp={() => {
-        /* commit the position after the drag finishes */
-        if (transform) {
-          onPositionChange(index, [
-            desk.position[0] + transform.x,
-            desk.position[1] + transform.y,
-          ]);
-        }
-      }}
-    >
+    onClick={(e) => {
+      e.stopPropagation();
+      onSelect(index);
+    }}
+    onPointerUp={() => {
+      /* commit the position after the drag finishes */
+      if (transform) {
+        onPositionChange(index, [
+          desk.position[0] + transform.x,
+          desk.position[1] + transform.y,
+        ]);
+      }
+    }}
+  >
       {/* Desk shape */}
       <DeskShape shape={desk.shape} />
 
       {/* Seats inside this desk */}
       {desk.seats.map((seatPos, sIdx) => (
-        <EditorSeat
-          key={sIdx}
-          deskIndex={index}
-          seatIndex={sIdx}
-          pos={seatPos}
-          isSelected={isSelected && selectedSeat === sIdx}
-          onPositionChange={(seatIdx, newPos) =>
-            onSeatPositionChange(index, seatIdx, newPos)
-          }
-          onSeatSelect={() => onSeatSelect(index, sIdx)}
-        />
-      ))}
+    <EditorSeat
+      key={sIdx}
+      deskIndex={index}
+      seatIndex={sIdx}
+      pos={seatPos}
+      isSelected={isSelected && selectedSeat === sIdx}
+      onPositionChange={(seatIdx, newPos) =>
+        onSeatPositionChange(index, seatIdx, newPos)
+      }
+      onSeatSelect={() => onSeatSelect(index, sIdx)}
+    />
+  ))}
     </div>
   );
 }
@@ -195,13 +195,13 @@ export default function App() {
 
   const [seatMap, setSeatMap] = useState(() => buildEmptySeatMap(classroom.desks));
   const [unseated, setUnseated] = useState([]);
-
+  
   // seating state
-  const [studentList, setStudentList] = useState([]);
-  const [studentTags, setStudentTags] = useState({});
-  const [studentNotes, setStudentNotes] = useState({});
+const [studentList, setStudentList] = useState([]);
+const [studentTags, setStudentTags] = useState({});
+const [studentNotes, setStudentNotes] = useState({});
   const [customTags, setCustomTags] = useState([]);
-  const [noteForChart, setNoteForChart] = useState("");
+const [noteForChart, setNoteForChart] = useState("");
   const [debug, setDebug] = useState(null);
 
   // UI
@@ -210,33 +210,33 @@ export default function App() {
   /* ---- CDL editor ---- */
   const [cdlDraft, setCdlDraft] = useState("{}");
   const [manualCdl, setManualCdl] = useState(null);
-  const [showCdlEditor, setShowCdlEditor] = useState(false);
+const [showCdlEditor, setShowCdlEditor] = useState(false);
 
   /* common list of preset tags */
-  const presetTags = [
-    "Talkative",
-    "Quiet",
-    "High Performer",
-    "Needs Assistance",
-    "Leader",
-    "Collaborative",
-  ];
+const presetTags = [
+  "Talkative",
+  "Quiet",
+  "High Performer",
+  "Needs Assistance",
+  "Leader",
+  "Collaborative",
+];
 
   /* --------------------------------------------------------------------- */
   /*  EFFECTS                                                              */
   /* --------------------------------------------------------------------- */
 
   /* keep optimiser's student cache in sync */
-  useEffect(() => {
-    primeStudentCache(
-      studentList.map((id) => ({
-        id,
-        firstName: id.split(" ")[0],
-        lastName: id.split(" ").slice(1).join(" ") || id,
-        tags: studentTags[id] || [],
-      }))
-    );
-  }, [studentList, studentTags]);
+useEffect(() => {
+  primeStudentCache(
+    studentList.map((id) => ({
+      id,
+      firstName: id.split(" ")[0],
+      lastName: id.split(" ").slice(1).join(" ") || id,
+      tags: studentTags[id] || [],
+    }))
+  );
+}, [studentList, studentTags]);
 
   // when desk layout changes, keep seated students if their seat still exists
   useEffect(() => {
@@ -267,120 +267,120 @@ export default function App() {
       setCustomTags((p) => [...p, tag]);
     }
   };
-
+  
   const handleRemoveTag = (studentId, tagIdx) =>
     setStudentTags((prev) => ({
       ...prev,
       [studentId]: prev[studentId].filter((_, i) => i !== tagIdx),
     }));
-
+  
   /* note helper */
   const handleUpdateNote = (studentId, text) =>
     setStudentNotes((prev) => ({ ...prev, [studentId]: text }));
 
 
-  // studnet stuff
-  /* export { students, tags, notes, customTags } to JSON */
-  function exportStudents() {
-    const data = {
-      students: studentList,
-      tags: studentTags,
-      notes: studentNotes,
-      customTags,
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "students.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+    // studnet stuff
+    /* export { students, tags, notes, customTags } to JSON */
+function exportStudents() {
+  const data = {
+    students: studentList,
+    tags: studentTags,
+    notes: studentNotes,
+    customTags,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "students.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
-  /* import the same structure */
-  function importStudents(file) {
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const data = JSON.parse(evt.target.result);
-        if (Array.isArray(data.students)) {
-          setStudentList(data.students);
-          setStudentTags(data.tags || {});
-          setStudentNotes(data.notes || {});
-          setCustomTags(data.customTags || []);
-        } else {
-          alert("JSON must contain a 'students' array");
-        }
-      } catch {
-        alert("Could not parse JSON");
+/* import the same structure */
+function importStudents(file) {
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    try {
+      const data = JSON.parse(evt.target.result);
+      if (Array.isArray(data.students)) {
+        setStudentList(data.students);
+        setStudentTags(data.tags || {});
+        setStudentNotes(data.notes || {});
+        setCustomTags(data.customTags || []);
+      } else {
+        alert("JSON must contain a 'students' array");
       }
-    };
-    reader.readAsText(file);
-  }
+    } catch {
+      alert("Could not parse JSON");
+    }
+  };
+  reader.readAsText(file);
+}
   /* --------------------------------------------------------------------- */
   /*  DnD LOGIC                                                            */
   /* --------------------------------------------------------------------- */
   const handleDragEnd = ({ active, over }) => {
     if (!over) return;
-
+  
     const studentA = active.id;           // the one we dragged
     const targetId = over.id;             // seat-id, pool, or other student
-
+  
     /** helper: recompute the pool from a seatMap */
     const recalcUnseated = (nextSeatMap) => {
       const seated = new Set(Object.values(nextSeatMap).filter(Boolean));
       return studentList.filter((s) => !seated.has(s));
     };
-
+  
     /** -------- 1. Dropped in the pool → unseat -------- */
     if (targetId === "pool") {
       const oldSeat = findSeatOfStudent(seatMap, studentA);
       if (!oldSeat) return;               // already un-seated
-
+  
       const next = { ...seatMap, [oldSeat]: null };
       setSeatMap(next);
       setUnseated(recalcUnseated(next));
       return;
     }
-
+  
     /** -------- 2. Dropped on another student tile -------- */
     if (studentList.includes(targetId)) {
       const studentB = targetId;
       if (studentA === studentB) return;
-
+  
       const seatA = findSeatOfStudent(seatMap, studentA);
       const seatB = findSeatOfStudent(seatMap, studentB);
       if (!seatB) return;                 // target student is in pool → ignore
-
+  
       const next = { ...seatMap };
       if (seatA) next[seatA] = studentB;
       else next[seatB] = null;            // studentB will become un-seated
       next[seatB] = studentA;
-
+  
       setSeatMap(next);
       setUnseated(recalcUnseated(next));
       return;
     }
-
+  
     /** -------- 3. Dropped on a seat -------- */
     if (!seatMap.hasOwnProperty(targetId)) return;
-
+  
     const occupant = seatMap[targetId];
-
+  
     /* 3a: seat empty → simple move */
     if (!occupant) {
       const oldSeat = findSeatOfStudent(seatMap, studentA);
       const next = { ...seatMap };
       if (oldSeat) next[oldSeat] = null;
       next[targetId] = studentA;
-
+  
       setSeatMap(next);
       setUnseated(recalcUnseated(next));
       return;
     }
-
+  
     /* 3b: seat occupied → swap A & B */
     const studentB = occupant;
     const seatA = findSeatOfStudent(seatMap, studentA); // may be null
@@ -392,7 +392,7 @@ export default function App() {
       next[targetId] = studentA;
       // leave seatA null (it doesn't exist), studentB ends up in pool
     }
-
+  
     setSeatMap(next);
     setUnseated(recalcUnseated(next));
   };
@@ -400,7 +400,7 @@ export default function App() {
   /* --------------------------------------------------------------------- */
   /*  RENDER                                                                */
   /* --------------------------------------------------------------------- */
-  return (
+      return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* HEADER */}
       <div className="bg-white border-b border-slate-200 shadow-sm">
@@ -409,42 +409,42 @@ export default function App() {
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Classroom Seating Manager</h1>
               <p className="text-sm text-slate-600 mt-1">Design layouts, manage students, and optimize seating arrangements</p>
-            </div>
+        </div>
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span className="text-sm font-medium text-slate-700">Ready</span>
-            </div>
-          </div>
+</div>
+        </div>
         </div> */}
 
-        {/* TAB BAR */}
+      {/* TAB BAR */}
         <div className="px-6">
           <nav className="flex space-x-8">
-            {[
+        {[
               { key: "seating", label: "Seating Sandbox", icon: "👥" },
               { key: "constraints", label: "Constraints", icon: "⚙️" },
               { key: "editor", label: "Layout Editor", icon: "✏️" },
-            ].map((t) => (
-              <button
-                key={t.key}
+        ].map((t) => (
+          <button
+            key={t.key}
                 className={`flex items-center space-x-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors ${tab === t.key
                     ? "border-blue-500 text-blue-600 bg-blue-50/50"
                     : "border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
                   }`}
-                onClick={() => setTab(t.key)}
-              >
+            onClick={() => setTab(t.key)}
+          >
                 <span className="text-lg">{t.icon}</span>
                 <span>{t.label}</span>
-              </button>
-            ))}
+          </button>
+        ))}
           </nav>
         </div>
       </div>
 
       {/* CONTENT AREA */}
       <div className="flex-1 overflow-hidden">
-        {/* --- SEATING TAB ------------------------------------------------- */}
-        {tab === "seating" && (
+      {/* --- SEATING TAB ------------------------------------------------- */}
+      {tab === "seating" && (
           <SeatingTab
             studentList={studentList}
             setStudentList={setStudentList}
@@ -481,17 +481,17 @@ export default function App() {
             cdlDraft={cdlDraft}
             setCdlDraft={setCdlDraft}
             studentList={studentList}
-            studentTags={studentTags}
+        studentTags={studentTags}
             desks={classroom.desks}
           />
-        )}
+      )}
 
-        {/* --- EDITOR TAB -------------------------------------------------- */}
-        {tab === "editor" && <LayoutEditor classroom={classroom} setClassroom={setClassroom} />}
+      {/* --- EDITOR TAB -------------------------------------------------- */}
+      {tab === "editor" && <LayoutEditor classroom={classroom} setClassroom={setClassroom} />}
       </div>
 
       {/* DEBUG MODAL */}
-      {debug && (
+{debug && (
         <DebugModal debug={debug} onClose={() => setDebug(null)} />
       )}
     </div>

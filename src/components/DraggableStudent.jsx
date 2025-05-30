@@ -15,8 +15,9 @@ function DraggableStudent({ id, tags = [], note = "", onAddTag, compact = false 
 
   const style = {
     ...(transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : {}),
-    zIndex: isDragging ? 9999 : 50,
+    zIndex: isDragging ? 99999 : 50,
     position: isDragging ? 'fixed' : 'relative',
+    pointerEvents: isDragging ? 'none' : 'auto',
   };
 
   const [showTip, setShowTip] = React.useState(false);
