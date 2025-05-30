@@ -26,8 +26,8 @@ function StudentPool({ students, studentTags, studentNotes, onAddTag }) {
         }`}
         style={{ 
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, 80px)',
-          gap: '12px',
+          gridTemplateColumns: 'repeat(auto-fill, 96px)',
+          gap: '16px',
           justifyContent: 'start'
         }}
       >
@@ -45,7 +45,7 @@ function StudentPool({ students, studentTags, studentNotes, onAddTag }) {
           </div>
         ) : (
           students.map((s) => (
-            <div key={s} style={{ width: '80px', height: '80px' }}>
+            <div key={s} style={{ width: '96px', height: '96px' }}>
               <DraggableStudent
                 id={s}
                 tags={studentTags[s] || []}

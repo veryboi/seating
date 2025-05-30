@@ -54,14 +54,30 @@ function DraggableStudent({ id, tags = [], note = "", onAddTag, compact = false 
       onMouseEnter={openTip}
       onMouseLeave={closeTip}
       className={`relative ${
-        small ? "w-12 h-12 text-xs" : "w-20 h-20 text-sm"
+        small ? "w-16 h-16 text-xs" : "w-24 h-24 text-sm"
       } bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-md hover:shadow-lg cursor-grab active:cursor-grabbing select-none flex flex-col items-center justify-center border border-blue-400/20 ${
         isDragging ? "rotate-3 scale-105" : ""
       }`}
       style={style}
     >
-      <div className={`font-semibold ${small ? "text-xs" : "text-sm"} leading-tight text-center`}>
-        {small ? getInitials(id) : id}
+      <div className={`font-semibold ${small ? "text-xs" : "text-xs"} leading-tight text-center px-1`}>
+        {small ? (
+          // For compact mode (seated), show full name but with smaller text and line breaks for long names
+          id.length > 8 ? (
+            <div>
+              <div>{id.split(' ')[0]}</div>
+              <div>{id.split(' ').slice(1).join(' ')}</div>
+            </div>
+          ) : id
+        ) : (
+          // For normal mode (in pool), break long names into multiple lines for better readability
+          id.length > 12 ? (
+            <div>
+              <div>{id.split(' ')[0]}</div>
+              <div>{id.split(' ').slice(1).join(' ')}</div>
+            </div>
+          ) : id
+        )}
       </div>
       
       {!small && tags.length > 0 && (

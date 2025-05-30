@@ -9,7 +9,7 @@ function Seat({ id, occupant, tags, studentNotes, onAddTag, style }) {
   return (
     <div
       ref={setNodeRef}
-      className={`relative z-10 w-12 h-12 border-2 rounded flex items-center justify-center ${borderColor}`}
+      className={`relative z-10 w-20 h-20 border-2 rounded flex items-center justify-center ${borderColor}`}
       style={style}
     >
       {occupant ? (
@@ -21,7 +21,7 @@ function Seat({ id, occupant, tags, studentNotes, onAddTag, style }) {
           compact
         />
       ) : (
-        "Seat"
+        <span className="text-xs text-gray-500">Seat</span>
       )}
     </div>
   );
