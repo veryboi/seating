@@ -407,7 +407,7 @@ function SeatingTab({
             <div
               className="relative mt-3 w-full border-2 border-dashed border-slate-300 rounded-xl bg-gradient-to-br from-slate-50 to-white overflow-auto"
               style={{ 
-                height: '400px',
+                height: '680px',
                 scrollbarGutter: "stable",
                 zIndex: 1
               }}
