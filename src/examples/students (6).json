@@ -1,0 +1,73 @@
+{
+  "students": [
+    "Ava Kim",
+    "Ben Torres",
+    "Cara Johnson",
+    "David Patel",
+    "Eli Zhang",
+    "Fiona Lopez",
+    "Grace O'Neil",
+    "Hugo Miller",
+    "Isla Brown",
+    "Jack Wilson",
+    "Kira Nguyen"
+  ],
+  "tags": {
+    "Ava Kim": [
+      "Quiet",
+      "High Performer"
+    ],
+    "Ben Torres": [
+      "Talkative",
+      "Leader"
+    ],
+    "Cara Johnson": [
+      "Needs Assistance"
+    ],
+    "David Patel": [
+      "Collaborative",
+      "High Performer"
+    ],
+    "Eli Zhang": [
+      "Talkative"
+    ],
+    "Fiona Lopez": [
+      "Quiet",
+      "Needs Assistance"
+    ],
+    "Grace O'Neil": [
+      "Leader",
+      "Collaborative"
+    ],
+    "Hugo Miller": [
+      "Disruptive"
+    ],
+    "Isla Brown": [
+      "High Performer"
+    ],
+    "Jack Wilson": [
+      "Disruptive",
+      "Talkative"
+    ],
+    "Kira Nguyen": [
+      "Needs Assistance",
+      "Quiet"
+    ]
+  },
+  "notes": {
+    "Ava Kim": "Prefers sitting near front but not in the very first row.",
+    "Ben Torres": "Great at group discussions; seat near other collaborative students.",
+    "Cara Johnson": "Needs easy access to teacher for math help.",
+    "David Patel": "Works well in pairs; keep away from disruptive peers.",
+    "Eli Zhang": "Talks a lot when next to Ben.",
+    "Fiona Lopez": "Shy but asks questions quietly—better near aisle.",
+    "Grace O'Neil": "Class president; happy to assist others.",
+    "Hugo Miller": "Gets distracted easily; seat away from other disruptive students.",
+    "Isla Brown": "Strong reader—no special needs.",
+    "Jack Wilson": "Energised; separate from Hugo if possible.",
+    "Kira Nguyen": "Extra support in English; prefers sitting with Cara."
+  },
+  "customTags": [
+    "Disruptive"
+  ]
+}
