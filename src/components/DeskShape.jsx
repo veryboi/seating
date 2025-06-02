@@ -7,8 +7,8 @@ function DeskShape({ shape }) {
         <div
           className="absolute z-0 rounded-full border border-gray-400 bg-white/60"
           style={{
-            width: shape.radius * 2.5,
-            height: shape.radius * 2.5,
+            width: shape.radius * 3,
+            height: shape.radius * 3,
             transform: "translate(-50%, -50%)",
             left: 0,
             top: 0,
@@ -20,8 +20,8 @@ function DeskShape({ shape }) {
         <div
           className="absolute z-0 border border-gray-400 bg-white/60"
           style={{
-            width: shape.width*1.5,
-            height: shape.height*1.5,
+            width: shape.width*2,
+            height: shape.height*2,
             transform: "translate(-50%, -50%)",
             left: 0,
             top: 0,
