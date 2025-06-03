@@ -372,7 +372,7 @@ function SeatingTab({
                     </svg>
                   </div>
                 ) : (
-                  'Generate CDL'
+                  'Generate constraints'
                 )}
               </button>
               <button
