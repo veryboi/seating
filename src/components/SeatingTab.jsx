@@ -59,16 +59,58 @@ function SeatingTab({
   const handleUpdateNote = (studentId, text) =>
     setStudentNotes((prev) => ({ ...prev, [studentId]: text }));
 
+  // Helper function to recalculate unseated students
+  const recalcUnseated = (nextSeatMap, nextStudentList = studentList) => {
+    const seated = new Set(Object.values(nextSeatMap).filter(Boolean));
+    return nextStudentList.filter((s) => !seated.has(s));
+  };
+
+  // Helper function to add a student and update unseated state
+  const addStudent = (studentName) => {
+    const clean = studentName.trim();
+    if (clean && !studentList.includes(clean)) {
+      const newStudentList = [...studentList, clean];
+      setStudentList(newStudentList);
+      // Add to unseated pool since new students start unassigned
+      setUnseated(recalcUnseated(seatMap, newStudentList));
+    }
+  };
+
+  // Helper function to delete a student and update unseated state
+  const deleteStudent = (studentName) => {
+    const newStudentList = studentList.filter((x) => x !== studentName);
+    setStudentList(newStudentList);
+    
+    // Remove from tags and notes
+    setStudentTags((p) => {
+      const n = { ...p };
+      delete n[studentName];
+      return n;
+    });
+    setStudentNotes((p) => {
+      const n = { ...p };
+      delete n[studentName];
+      return n;
+    });
+    
+    // Remove from seat map if they were seated
+    const newSeatMap = { ...seatMap };
+    const studentSeat = Object.entries(seatMap).find(([_, student]) => student === studentName)?.[0];
+    if (studentSeat) {
+      newSeatMap[studentSeat] = null;
+      setSeatMap(newSeatMap);
+    }
+    
+    // Update unseated list
+    setUnseated(recalcUnseated(newSeatMap, newStudentList));
+    setSelectedStudent(null);
+  };
+
   const handleDragEnd = ({ active, over }) => {
     if (!over) return;
 
     const studentA = active.id;
     const targetId = over.id;
-
-    const recalcUnseated = (nextSeatMap) => {
-      const seated = new Set(Object.values(nextSeatMap).filter(Boolean));
-      return studentList.filter((s) => !seated.has(s));
-    };
 
     if (targetId === "pool") {
       const oldSeat = Object.entries(seatMap).find(([_, student]) => student === studentA)?.[0];
@@ -146,6 +188,8 @@ function SeatingTab({
                     setStudentNotes(imported.studentNotes);
                     setCustomTags(imported.customTags);
                     setSelectedStudent(null);
+                    // Update unseated pool to include newly imported students
+                    setUnseated(recalcUnseated(seatMap, imported.studentList));
                   } else {
                     alert("JSON must contain a 'students' array");
                   }
@@ -176,20 +220,7 @@ function SeatingTab({
                 onAddTag={handleAddTag}
                 onRemoveTag={handleRemoveTag}
                 onUpdateNote={handleUpdateNote}
-                onDelete={(name) => {
-                  setStudentList((p) => p.filter((x) => x !== name));
-                  setStudentTags((p) => {
-                    const n = { ...p };
-                    delete n[name];
-                    return n;
-                  });
-                  setStudentNotes((p) => {
-                    const n = { ...p };
-                    delete n[name];
-                    return n;
-                  });
-                  setSelectedStudent(null);
-                }}
+                onDelete={deleteStudent}
                 onCollapse={() => setSelectedStudent(null)}
               />
             ) : (
@@ -233,7 +264,7 @@ function SeatingTab({
                     e.preventDefault();
                     const clean = studentInput.trim();
                     if (clean && !studentList.includes(clean)) {
-                      setStudentList((p) => [...p, clean]);
+                      addStudent(clean);
                       setStudentInput("");
                     }
                   }
@@ -244,7 +275,7 @@ function SeatingTab({
                 onClick={() => {
                   const clean = studentInput.trim();
                   if (clean && !studentList.includes(clean)) {
-                    setStudentList((p) => [...p, clean]);
+                    addStudent(clean);
                     setStudentInput("");
                   }
                 }}
@@ -361,8 +392,7 @@ function SeatingTab({
                     );
 
                     setSeatMap(seatMapNew);
-                    const seated = new Set(Object.values(seatMapNew).filter(Boolean));
-                    setUnseated(studentList.filter((s) => !seated.has(s)));
+                    setUnseated(recalcUnseated(seatMapNew));
                   } catch (err) {
                     console.log("Could not generate chart:\n" + (err?.message || String(err)));
                     alert("Could not generate chart:\n" + (err?.message || String(err)));
