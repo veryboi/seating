@@ -5,9 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:server": "node server.js",
+    "dev:full": "concurrently \"npm run dev:server\" \"npm run dev\"",
     "build": "vite build",
+    "vercel-build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node server.js",
+    "start": "NODE_ENV=production node server.js"
   },
   "dependencies": {
     "@dnd-kit/sortable": "^10.0.0",
@@ -15,6 +20,10 @@
     "@tailwindcss/vite": "^4.1.6",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
+    "concurrently": "^8.2.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
     "react": "^19.1.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",

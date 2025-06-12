@@ -30,6 +30,7 @@ export async function compileNotesToCDL(
   layout: Desk[],
   allTags: string[],
   opts: CompileOpts = {},
+  apiKey?: string,
 ): Promise<CDL> {
   const {
     model        = "gemini-2.5-flash-preview-04-17",
@@ -118,15 +119,15 @@ Assistant:
   );
 
   /* ---------- Gemini client ---------- */
-  const apiKey =
-      (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_GEMINI_API_KEY)
-   || (typeof import.meta !== "undefined" && (import.meta as any).env?.REACT_APP_GEMINI_API_KEY)
-   || (typeof window !== "undefined"   && (window as any).GEMINI_API_KEY)
-   ||  process.env?.GEMINI_API_KEY;
+  const finalApiKey = apiKey || 
+      (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_GEMINI_API_KEY) ||
+      (typeof import.meta !== "undefined" && (import.meta as any).env?.REACT_APP_GEMINI_API_KEY) ||
+      (typeof window !== "undefined" && (window as any).GEMINI_API_KEY) ||
+      process.env?.GEMINI_API_KEY;
 
-  if (!apiKey) throw new Error("Gemini API key not found");
+  if (!finalApiKey) throw new Error("Gemini API key not found");
 
-  const genAI = new GoogleGenerativeAI(apiKey);
+  const genAI = new GoogleGenerativeAI(finalApiKey);
   const llm   = genAI.getGenerativeModel({ model });
 
   let prompt   = [SYSTEM_PROMPT, SCHEMA_HINT, FEW_SHOT, USER_PROMPT].join("\n\n");

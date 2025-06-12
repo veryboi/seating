@@ -30,7 +30,8 @@ function SeatingTab({
   buildUserPrompt,
   runOptimizer,
   importStudents,
-  exportStudents
+  exportStudents,
+  apiKey
 }) {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [studentInput, setStudentInput] = useState("");
@@ -343,7 +344,9 @@ function SeatingTab({
                       studentNotes,
                       studentTags,
                       classroom.desks,
-                      [...presetTags, ...customTags]
+                      [...presetTags, ...customTags],
+                      {},
+                      apiKey
                     );
                     
                     console.log('Generated CDL:', cdl);

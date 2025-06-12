@@ -14,6 +14,8 @@ import {
 import chartData from "../chart_data/chart1.json"; // ◀ default layout (can be replaced via Import)
 import "./App.css";
 import "./index.css";
+import { AuthProvider, useAuth } from './components/AuthProvider';
+import LoginScreen from './components/LoginScreen';
 import {
     primeStudentCache,
     generateChart as runOptimizer,
@@ -33,6 +35,7 @@ import StudentEditor from "./components/StudentEditor";
 import LayoutEditor from "./components/LayoutEditor";
 import DebugModal from "./components/modals/DebugModal";
 import CDLEditorModal from "./components/modals/CDLEditorModal";
+import TutorialModal from "./components/modals/TutorialModal";
 import SeatingTab from "./components/SeatingTab";
 import ConstraintsTab from "./components/ConstraintsTab";
 
@@ -184,9 +187,10 @@ function DraggableDesk({
 
 
 /* --------------------------------------------------------------------------
-   MAIN APP
+   AUTHENTICATED APP CONTENT
 --------------------------------------------------------------------------- */
-export default function App() {
+function AuthenticatedApp() {
+  const { apiKey } = useAuth();
   /* --------------------------------------------------------------------- */
   /*  STATE                                                                */
   /* --------------------------------------------------------------------- */
@@ -211,6 +215,9 @@ const [noteForChart, setNoteForChart] = useState("");
   const [cdlDraft, setCdlDraft] = useState("{}");
   const [manualCdl, setManualCdl] = useState(null);
 const [showCdlEditor, setShowCdlEditor] = useState(false);
+  
+  /* ---- Tutorial modal ---- */
+  const [showTutorial, setShowTutorial] = useState(false);
 
   /* common list of preset tags */
 const presetTags = [
@@ -404,20 +411,26 @@ function importStudents(file) {
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* HEADER */}
       <div className="bg-white border-b border-slate-200 shadow-sm">
-        {/* <div className="px-6 py-4">
+        {/* Header with Title and Help Button */}
+        <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Classroom Seating Manager</h1>
               <p className="text-sm text-slate-600 mt-1">Design layouts, manage students, and optimize seating arrangements</p>
+            </div>
+            <button
+              onClick={() => setShowTutorial(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span className="font-medium">Tutorial</span>
+            </button>
+          </div>
         </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium text-slate-700">Ready</span>
-</div>
-        </div>
-        </div> */}
 
-      {/* TAB BAR */}
+        {/* TAB BAR */}
         <div className="px-6">
           <nav className="flex space-x-8">
         {[
@@ -472,6 +485,7 @@ function importStudents(file) {
             runOptimizer={runOptimizer}
             importStudents={importStudentsUtil}
             exportStudents={exportStudentsUtil}
+            apiKey={apiKey}
           />
         )}
 
@@ -494,6 +508,33 @@ function importStudents(file) {
 {debug && (
         <DebugModal debug={debug} onClose={() => setDebug(null)} />
       )}
+
+      {/* TUTORIAL MODAL */}
+      <TutorialModal
+        isOpen={showTutorial}
+        onClose={() => setShowTutorial(false)}
+      />
     </div>
   );
+}
+
+/* --------------------------------------------------------------------------
+   MAIN APP WITH AUTHENTICATION
+--------------------------------------------------------------------------- */
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
+function AppContent() {
+  const { isAuthenticated } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <LoginScreen />;
+  }
+  
+  return <AuthenticatedApp />;
 }

@@ -228,7 +228,7 @@ function LayoutEditor({ classroom, setClassroom }) {
                   </svg>
                   Circle
                 </button>
-                <button 
+                {/* <button 
                   className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
                   onClick={addPolygonDesk}
                 >
@@ -236,7 +236,7 @@ function LayoutEditor({ classroom, setClassroom }) {
                     <polygon points="12,2 22,20 2,20"/>
                   </svg>
                   Triangle
-                </button>
+                </button> */}
               </div>
               
               <div className="border-l border-slate-300 pl-3 flex items-center space-x-2">
